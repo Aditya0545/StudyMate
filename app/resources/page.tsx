@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon } from '@heroicons/react/24/outline'
 import ResourceCard from '@/app/components/ResourceCard'
 
 type ResourceType = 'note' | 'link' | 'video' | 'document'
@@ -57,6 +58,7 @@ export default function ResourcesPage() {
         setLoading(true)
         setError(null)
         
+        // Build query parameters
         const params = new URLSearchParams()
         if (selectedCategory) params.append('category', selectedCategory)
         if (selectedType) params.append('type', selectedType)
@@ -65,31 +67,38 @@ export default function ResourcesPage() {
         
         const queryString = params.toString() ? `?${params.toString()}` : ''
         const url = `/api/resources${queryString}`
-        console.log('Fetching resources from:', url)
         
-        const response = await fetch(url)
+        console.log('Fetching resources:', { url, timestamp: new Date().toISOString() })
         
+        // Use fetch with explicit options
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache' 
+          },
+          cache: 'no-store',
+          next: { revalidate: 0 }
+        })
+        
+        // Check for successful response
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorText = await response.text().catch(() => 'Unknown error')
           console.error('API Error Response:', {
             status: response.status,
             statusText: response.statusText,
-            data: errorData
+            data: errorText
           })
           throw new Error(`API error: ${response.status} ${response.statusText}`)
         }
         
+        // Parse JSON response
         const data = await response.json()
         console.log(`Loaded ${data.length} resources`)
         setResources(data)
       } catch (err) {
         console.error('Error fetching resources:', err)
-        // Check if we're in development or production
-        if (process.env.NODE_ENV === 'development') {
-          setError(`Failed to load resources: ${err instanceof Error ? err.message : String(err)}. Check the console for more details.`)
-        } else {
-          setError('Failed to load resources. This may be due to a database connection issue. Please check your environment variables in Vercel.')
-        }
+        setError('Failed to load resources. Please try again later.')
       } finally {
         setLoading(false)
       }
@@ -99,21 +108,25 @@ export default function ResourcesPage() {
   }, [searchTerm, selectedCategory, selectedType, selectedTag])
   
   // Handle resource deletion
-  const handleDeleteResource = async (id: string) => {
+  const handleDeleteResource = async (resourceId: string) => {
     try {
-      const response = await fetch(`/api/resources?id=${id}`, {
+      const response = await fetch(`/api/resources?id=${resourceId}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to delete resource')
+      if (response.ok) {
+        // Remove the deleted resource from the state
+        setResources(prevResources => 
+          prevResources.filter(resource => resource._id !== resourceId)
+        )
+      } else {
+        console.error('Failed to delete resource')
       }
-      
-      // Remove resource from state
-      setResources(prevResources => prevResources.filter(r => r._id !== id))
-    } catch (err) {
-      console.error('Error deleting resource:', err)
-      setError('Failed to delete resource. Please try again.')
+    } catch (error) {
+      console.error('Error deleting resource:', error)
     }
   }
   
@@ -126,22 +139,24 @@ export default function ResourcesPage() {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Study Resources</h1>
+    <div className="container mx-auto p-4">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Resources</h1>
         <Link
           href="/resources/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+          className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
-          Add New Resource
+          <PlusIcon className="mr-2 h-5 w-5" />
+          Add New
         </Link>
       </div>
       
       {/* Filters */}
-      <div className="mb-8 rounded-xl bg-white p-6 shadow-md dark:bg-gray-800">
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 space-y-4 rounded-lg bg-white p-4 shadow dark:bg-gray-800 sm:space-y-0 sm:p-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Search */}
           <div>
-            <label htmlFor="search" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Search
             </label>
             <input
@@ -149,37 +164,41 @@ export default function ResourcesPage() {
               id="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by title or description"
-              className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              placeholder="Search resources..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
           
+          {/* Category Filter */}
           <div>
-            <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Category
             </label>
             <select
               id="category"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category} value={category}>
+                  {category}
+                </option>
               ))}
             </select>
           </div>
           
+          {/* Type Filter */}
           <div>
-            <label htmlFor="type" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Type
             </label>
             <select
               id="type"
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Types</option>
               <option value="note">Notes</option>
@@ -189,72 +208,96 @@ export default function ResourcesPage() {
             </select>
           </div>
           
+          {/* Tag Filter */}
           <div>
-            <label htmlFor="tag" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Tag
             </label>
             <select
               id="tag"
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Tags</option>
               {tags.map((tag) => (
-                <option key={tag} value={tag}>{tag}</option>
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
               ))}
             </select>
           </div>
         </div>
         
-        <div className="flex justify-end">
+        {/* Clear Filters Button */}
+        <div className="mt-4 flex justify-end">
           <button
             onClick={handleResetFilters}
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
           >
-            Reset Filters
+            Clear Filters
           </button>
         </div>
       </div>
       
-      {/* Error Message */}
-      {error && (
-        <div className="mb-8 rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-200">
-          {error}
-        </div>
-      )}
-      
-      {/* Resources Grid */}
+      {/* Resources Display */}
       {loading ? (
-        <div className="flex min-h-[200px] items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+        <div className="mt-8 flex h-64 items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+          <span className="ml-3 text-lg">Loading resources...</span>
         </div>
-      ) : resources.length > 0 ? (
+      ) : error ? (
+        <div className="mt-8 rounded-lg bg-red-100 p-4 dark:bg-red-900/30">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
+              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                <p>{error}</p>
+                <p className="mt-2">
+                  Please verify your database connection in the{" "}
+                  <Link href="/db-test" className="font-medium underline">
+                    database test page
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : resources.length === 0 ? (
+        <div className="mt-8 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+            <FolderIcon className="h-16 w-16 text-gray-400" />
+          </div>
+          <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No resources found</h3>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            {searchTerm || selectedCategory || selectedType || selectedTag
+              ? "No resources match your current filters. Try changing or clearing your filters."
+              : "Get started by creating your first resource."}
+          </p>
+          <div className="mt-6">
+            <Link 
+              href="/resources/new" 
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              <PlusIcon className="mr-2 h-5 w-5" />
+              Add Resource
+            </Link>
+          </div>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {resources.map((resource) => (
             <ResourceCard 
               key={resource._id} 
               resource={resource} 
-              onDelete={handleDeleteResource}
+              onDelete={() => handleDeleteResource(resource._id)}
             />
           ))}
-        </div>
-      ) : (
-        <div className="rounded-xl bg-white p-8 text-center shadow-md dark:bg-gray-800">
-          <p className="text-xl text-gray-600 dark:text-gray-300">No resources found.</p>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            {searchTerm || selectedCategory || selectedType || selectedTag 
-              ? 'Try adjusting your filters or search term.'
-              : 'Get started by adding your first resource.'}
-          </p>
-          {!searchTerm && !selectedCategory && !selectedType && !selectedTag && (
-            <Link
-              href="/resources/new"
-              className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
-            >
-              Add New Resource
-            </Link>
-          )}
         </div>
       )}
     </div>
