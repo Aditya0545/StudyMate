@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import YoutubePreview from './YoutubePreview'
 import { extractVideoId } from '@/app/lib/youtube'
+import { getEmbedUrl, getDriveFileType, isGoogleNativeFile } from '@/app/lib/drive'
+import { DocumentTextIcon, PresentationChartBarIcon, TableCellsIcon, PhotoIcon, FilmIcon, DocumentIcon } from '@heroicons/react/24/outline'
+import { getUrlDisplayText, getResourceTypeLabel } from '@/app/lib/utils'
 
 // List of tag colors for variety
 const TAG_COLORS = [
@@ -17,7 +20,7 @@ const TAG_COLORS = [
   'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
 ]
 
-type ResourceType = 'note' | 'link' | 'video' | 'document'
+type ResourceType = 'note' | 'link' | 'video' | 'document' | 'driveLink'
 
 interface UrlMetadata {
   type: string;  // 'youtube', 'gdocs', 'gsheets', 'gslides', 'gdrive', 'other'
@@ -26,6 +29,11 @@ interface UrlMetadata {
   thumbnail?: string;
   author?: string;
   publishedAt?: string;
+  fileId?: string;
+  mimeType?: string;
+  embedLink?: string;
+  webViewLink?: string;
+  name?: string;
 }
 
 interface ResourceCardProps {
@@ -48,6 +56,14 @@ interface ResourceCardProps {
       publishedAt: string
     }
     urlMetadata?: UrlMetadata
+    driveMetadata?: {
+      fileId: string
+      mimeType: string
+      name: string
+      thumbnailLink?: string
+      fileType?: string
+      webViewLink?: string
+    }
   }
   onDelete?: (id: string) => void
 }
@@ -100,6 +116,13 @@ export default function ResourceCard({ resource, onDelete }: ResourceCardProps) 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         )
+      case 'driveLink':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        )
       default:
         return null
     }
@@ -126,6 +149,17 @@ export default function ResourceCard({ resource, onDelete }: ResourceCardProps) 
   // Get URL display text based on type
   const getUrlDisplayText = () => {
     if (!resource.url) return '';
+    
+    // Handle drive resources with proper data
+    if (resource.type === 'driveLink') {
+      const metadata = resource.urlMetadata || resource.driveMetadata;
+      if (metadata && metadata.name) {
+        return metadata.name;
+      }
+      if (resource.url.startsWith('drive:')) {
+        return 'Google Drive Document';
+      }
+    }
     
     // Use urlMetadata if available
     if (resource.urlMetadata?.title) {
@@ -154,6 +188,19 @@ export default function ResourceCard({ resource, onDelete }: ResourceCardProps) 
 
   // Get resource type label
   const getResourceTypeLabel = () => {
+    // Handle Drive resources specifically
+    if (resource.type === 'driveLink') {
+      const metadata = resource.urlMetadata || resource.driveMetadata;
+      if (metadata && metadata.mimeType) {
+        if (metadata.mimeType.includes('document')) return 'Google Doc';
+        if (metadata.mimeType.includes('spreadsheet')) return 'Google Sheet';
+        if (metadata.mimeType.includes('presentation')) return 'Google Slides';
+        if (metadata.mimeType.includes('form')) return 'Google Form';
+        return 'Google Drive';
+      }
+      return 'DriveLink';
+    }
+    
     // Override type label for Google services
     if (resource.urlMetadata) {
       if (resource.urlMetadata.type === 'gdocs') return 'Google Docs';
@@ -178,6 +225,151 @@ export default function ResourceCard({ resource, onDelete }: ResourceCardProps) 
     const index = Math.abs(hashCode % TAG_COLORS.length);
     return TAG_COLORS[index];
   }
+
+  // Inside the ResourceCard component
+  // Add this new function for rendering Drive content
+
+  const renderDriveResource = (resource: any) => {
+    // Debug log to see what data we're working with
+    console.log('Drive Resource Data:', {
+      resourceType: resource.type,
+      url: resource.url,
+      urlMetadata: resource.urlMetadata,
+      driveMetadata: resource.driveMetadata
+    });
+    
+    // Check for either urlMetadata or driveMetadata
+    const metadata = resource.urlMetadata || resource.driveMetadata;
+    
+    // If URL starts with drive: but no metadata, extract fileId from URL
+    if ((!metadata || (!metadata.fileId && !metadata.id)) && resource.url && resource.url.startsWith('drive:')) {
+      const fileId = resource.url.split('drive:')[1];
+      if (fileId) {
+        return (
+          <div className="mt-4">
+            <div className="font-medium text-gray-900 dark:text-white">{resource.title}</div>
+            
+            {/* Preview container */}
+            <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              {/* Embed iframe */}
+              <div className="aspect-video w-full">
+                <iframe 
+                  src={`https://docs.google.com/document/d/${fileId}/preview`}
+                  className="h-full w-full" 
+                  frameBorder="0" 
+                  allowFullScreen
+                  title={resource.title || 'Google Drive file'}
+                ></iframe>
+              </div>
+              
+              {/* File info footer */}
+              <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-gray-700">
+                <div className="flex items-center">
+                  <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                    Google Doc
+                  </span>
+                </div>
+                <button
+                  onClick={() => window.open(`https://docs.google.com/document/d/${fileId}/edit`, '_blank')}
+                  className="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                >
+                  Open in Docs
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      return <div className="text-gray-400">No drive metadata available</div>;
+    }
+
+    // Extract data from either metadata format
+    const fileId = metadata.fileId || metadata.id;
+    const mimeType = metadata.mimeType;
+    const name = metadata.name || resource.title;
+    const thumbnailLink = metadata.thumbnailLink;
+    const webViewLink = metadata.webViewLink;
+    const embedLink = metadata.embedLink || metadata.embedUrl || getEmbedUrl(fileId, mimeType);
+    
+    const fileType = mimeType ? getDriveFileType(mimeType) : 'File';
+    const isGoogleFile = mimeType ? isGoogleNativeFile(mimeType) : false;
+    
+    const openInDrive = () => {
+      // First try to use the webViewLink if available
+      if (webViewLink) {
+        window.open(webViewLink, '_blank');
+        return;
+      }
+      
+      // Otherwise construct URLs based on file type
+      if (isGoogleFile) {
+        // Open in the appropriate Google editor based on type
+        if (mimeType === 'application/vnd.google-apps.document') {
+          window.open(`https://docs.google.com/document/d/${fileId}/edit`, '_blank');
+        } else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+          window.open(`https://docs.google.com/spreadsheets/d/${fileId}/edit`, '_blank');
+        } else if (mimeType === 'application/vnd.google-apps.presentation') {
+          window.open(`https://docs.google.com/presentation/d/${fileId}/edit`, '_blank');
+        } else {
+          window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+        }
+      } else {
+        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+      }
+    };
+
+    return (
+      <div className="mt-4">
+        <div className="font-medium text-gray-900 dark:text-white">{name}</div>
+        
+        {/* Preview container */}
+        <div className="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          {/* File thumbnail or embed */}
+          {embedLink ? (
+            <div className="aspect-video w-full">
+              <iframe 
+                src={embedLink} 
+                className="h-full w-full" 
+                frameBorder="0" 
+                allowFullScreen
+                title={name || 'Google Drive file'}
+              ></iframe>
+            </div>
+          ) : thumbnailLink ? (
+            <div className="aspect-video w-full bg-gray-100 dark:bg-gray-900">
+              <img 
+                src={thumbnailLink} 
+                alt={name || 'File thumbnail'} 
+                className="h-full w-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex aspect-video w-full items-center justify-center bg-gray-100 dark:bg-gray-900">
+              <svg className="h-16 w-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z" />
+              </svg>
+            </div>
+          )}
+          
+          {/* File info footer */}
+          <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-gray-700">
+            <div className="flex items-center">
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                {fileType}
+              </span>
+            </div>
+            <button
+              onClick={openInDrive}
+              className="rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+            >
+              Open in {isGoogleFile ? fileType.replace('Google ', '') : 'Drive'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800 dark:shadow-gray-900/30">
@@ -339,6 +531,9 @@ export default function ResourceCard({ resource, onDelete }: ResourceCardProps) 
             </p>
           </div>
         )}
+
+        {/* Drive Resource */}
+        {resource.type === 'driveLink' && renderDriveResource(resource)}
 
         {/* Tags */}
         {resource.tags && resource.tags.length > 0 && (

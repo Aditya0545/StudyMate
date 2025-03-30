@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import YoutubePreview from './YoutubePreview'
 import { getVideoMetadata } from '@/app/lib/youtube'
+import { createDriveResourceLink } from '@/app/lib/drive'
 
-type ResourceType = 'note' | 'link' | 'video' | 'document'
+type ResourceType = 'note' | 'link' | 'video' | 'document' | 'driveLink'
 
 interface ResourceFormProps {
   initialData?: {
@@ -25,8 +26,40 @@ interface ResourceFormProps {
       channelTitle: string
       publishedAt: string
     }
+    driveMetadata?: {
+      name: string
+      fileType: string
+      thumbnailLink: string
+    }
   }
   isEditing?: boolean
+  onGoogleDriveSelect?: () => Promise<any>
+}
+
+// Define the ResourceFormData interface to match the form data structure
+interface ResourceFormData {
+  id?: string
+  title: string
+  description: string
+  type: ResourceType
+  url?: string
+  content?: string
+  tags: string[]
+  category: string
+  urlMetadata?: any
+  videoMetadata?: {
+    id: string
+    title: string
+    description: string
+    thumbnail: string
+    channelTitle: string
+    publishedAt: string
+  }
+  driveMetadata?: {
+    name: string
+    fileType: string
+    thumbnailLink: string
+  }
 }
 
 // List of tag colors for variety (same as in ResourceCard)
@@ -45,17 +78,21 @@ export default function ResourceForm({
   initialData = { 
     title: '', 
     description: '', 
-    type: 'note' as ResourceType, 
+    type: 'driveLink' as ResourceType,
     url: '', 
     content: '',
     tags: [],
     category: ''
   }, 
-  isEditing = false 
+  isEditing = false,
+  onGoogleDriveSelect
 }: ResourceFormProps) {
   const router = useRouter()
-  const [formData, setFormData] = useState(initialData)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formData, setFormData] = useState<ResourceFormData>({
+    ...initialData,
+    type: initialData?.type || 'note',
+  })
+  const [errors, setErrors] = useState<Record<string, string | null>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [isLoadingVideoData, setIsLoadingVideoData] = useState(false)
@@ -246,6 +283,70 @@ export default function ResourceForm({
     }
   }
 
+  // Handle Drive file selection when the user selects a file
+  const handleDriveFileSelect = async () => {
+    if (!onGoogleDriveSelect) {
+      console.error('Google Drive selection function not provided');
+      return;
+    }
+    
+    try {
+      // Show loading state
+      setIsSubmitting(true);
+      
+      // Call the provided callback to handle selecting a Drive file
+      const driveMetadata = await onGoogleDriveSelect();
+      
+      // Reset loading state
+      setIsSubmitting(false);
+      
+      if (!driveMetadata) {
+        console.log('User cancelled selection or selection failed');
+        setErrors({
+          ...errors,
+          form: 'Google Drive file selection was cancelled or failed. Please try again or select a different resource type.'
+        });
+        return;
+      }
+      
+      console.log('Drive file selected:', driveMetadata);
+      
+      // Update form data with the Drive file information
+      setFormData({
+        ...formData,
+        title: driveMetadata.name || formData.title,
+        description: driveMetadata.description || formData.description,
+        url: `drive:${driveMetadata.fileId}`, // Store as a drive: URL scheme
+        urlMetadata: {
+          ...driveMetadata,
+          // Ensure these critical properties are present
+          fileId: driveMetadata.fileId,
+          name: driveMetadata.name || formData.title,
+          mimeType: driveMetadata.mimeType || 'application/vnd.google-apps.document',
+          embedLink: driveMetadata.embedLink || `https://docs.google.com/document/d/${driveMetadata.fileId}/preview`,
+          webViewLink: driveMetadata.webViewLink || `https://docs.google.com/document/d/${driveMetadata.fileId}/edit`
+        }
+      });
+      
+      // Clear validation errors
+      setErrors({
+        ...errors,
+        url: null,
+        form: null
+      });
+      
+    } catch (error) {
+      console.error('Error selecting Drive file:', error);
+      setIsSubmitting(false);
+      
+      // Show error message
+      setErrors({
+        ...errors,
+        form: 'Failed to select Google Drive file. Please check your Google Drive permissions and try again.'
+      });
+    }
+  };
+
   return (
     <div className="rounded-xl bg-white p-6 shadow-md dark:bg-gray-800">
       <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
@@ -260,22 +361,51 @@ export default function ResourceForm({
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Resource Type */}
-        <div>
-          <label htmlFor="type" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-200">
-            Resource Type <span className="text-red-500">*</span>
+        <div className="mb-4">
+          <label htmlFor="type" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+            Type
           </label>
-          <select
-            id="type"
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-          >
-            <option value="note">Note</option>
-            <option value="link">Link</option>
-            <option value="video">YouTube Video</option>
-            <option value="document">Document</option>
-          </select>
+          <div className="flex flex-col space-y-2">
+            <select
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+            >
+              <option value="note">Note</option>
+              <option value="link">Link</option>
+              <option value="video">Video</option>
+              <option value="document">Document</option>
+              <option value="driveLink">Google Drive File</option>
+            </select>
+            
+            {/* Google Drive button - only show when type is driveLink */}
+            {formData.type === 'driveLink' && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleDriveFileSelect}
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center rounded-lg bg-blue-50 px-4 py-3 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                >
+                  {isSubmitting ? (
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                  ) : (
+                    <svg className="mr-2 h-5 w-5" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                    </svg>
+                  )}
+                  Select Google Drive File
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* URL for links and videos */}
@@ -430,6 +560,67 @@ export default function ResourceForm({
             </div>
           )}
         </div>
+        
+        {/* Preview for Google Drive files */}
+        {formData.type === 'driveLink' && formData.urlMetadata && (
+          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Selected Google Drive File</h3>
+            <div className="flex items-start space-x-4">
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded border border-gray-200 dark:border-gray-700">
+                {formData.urlMetadata.thumbnailLink ? (
+                  <img 
+                    src={formData.urlMetadata.thumbnailLink} 
+                    alt={formData.urlMetadata.name || 'File thumbnail'} 
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      // If thumbnail fails to load, show an icon based on the file type
+                      const target = e.target as HTMLImageElement;
+                      if (formData.urlMetadata?.mimeType) {
+                        if (formData.urlMetadata.mimeType.includes('document')) {
+                          target.src = 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document';
+                        } else if (formData.urlMetadata.mimeType.includes('spreadsheet')) {
+                          target.src = 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.spreadsheet';
+                        } else if (formData.urlMetadata.mimeType.includes('presentation')) {
+                          target.src = 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.presentation';
+                        } else {
+                          target.src = 'https://drive-thirdparty.googleusercontent.com/16/type/application/octet-stream';
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-gray-700">
+                    <svg className="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900 dark:text-white">{formData.urlMetadata.name || 'Unknown file'}</h4>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {formData.urlMetadata.mimeType ? (
+                    formData.urlMetadata.mimeType.includes('google-apps.document') ? 'Google Doc' :
+                    formData.urlMetadata.mimeType.includes('google-apps.spreadsheet') ? 'Google Sheet' :
+                    formData.urlMetadata.mimeType.includes('google-apps.presentation') ? 'Google Slides' :
+                    formData.urlMetadata.mimeType.includes('pdf') ? 'PDF' :
+                    'File'
+                  ) : 'File'}
+                </p>
+                <div className="mt-2">
+                  <a 
+                    href={formData.urlMetadata.webViewLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    View in Google Drive
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Submit Button */}
         <div className="flex justify-end">

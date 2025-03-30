@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon } from '@heroicons/react/24/outline'
 import ResourceCard from '@/app/components/ResourceCard'
+import PasswordProtection from '@/app/components/PasswordProtection'
 
 type ResourceType = 'note' | 'link' | 'video' | 'document'
 
@@ -46,10 +47,17 @@ export default function ResourcesPage() {
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedTag, setSelectedTag] = useState<string>('')
   
+  // For limited view
+  const [showAll, setShowAll] = useState(false)
+  const INITIAL_RESOURCE_COUNT = 6
+  
   // Get all unique categories and tags from resources
   const categories = Array.from(new Set(resources.map(r => r.category))).filter(Boolean).sort()
   const allTags = resources.flatMap(r => r.tags).filter(Boolean)
   const tags = Array.from(new Set(allTags)).sort()
+  
+  // Get visible resources
+  const visibleResources = showAll ? resources : resources.slice(0, INITIAL_RESOURCE_COUNT)
   
   // Load resources
   useEffect(() => {
@@ -257,167 +265,177 @@ export default function ResourcesPage() {
   }
   
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Resources</h1>
-        <Link
-          href="/resources/new"
-          className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          <PlusIcon className="mr-2 h-5 w-5" />
-          Add New
-        </Link>
-      </div>
-      
-      {/* Filters */}
-      <div className="mb-6 space-y-4 rounded-lg bg-white p-4 shadow dark:bg-gray-800 sm:space-y-0 sm:p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Search */}
+    <PasswordProtection>
+      <div className="container mx-auto px-4 py-8">
+        {/* Page Header with Add Button */}
+        <div className="mb-8 flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>
-            <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Search
-            </label>
-            <input
-              type="text"
-              id="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search resources..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white md:text-3xl">Resources</h1>
+            <p className="mt-1 text-gray-600 dark:text-gray-300">
+              Manage your learning materials and resources
+            </p>
+          </div>
+          <Link
+            href="/resources/new"
+            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800"
+          >
+            <PlusIcon className="mr-2 h-5 w-5" />
+            Add Resource
+          </Link>
+        </div>
+        
+        {/* Filters */}
+        <div className="mb-6 space-y-4 rounded-lg bg-white p-4 shadow dark:bg-gray-800 sm:space-y-0 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Search */}
+            <div>
+              <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Search
+              </label>
+              <input
+                type="text"
+                id="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search resources..."
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            
+            {/* Category Filter */}
+            <div>
+              <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Type Filter */}
+            <div>
+              <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Type
+              </label>
+              <select
+                id="type"
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Types</option>
+                <option value="note">Notes</option>
+                <option value="link">Links</option>
+                <option value="video">Videos</option>
+                <option value="document">Documents</option>
+              </select>
+            </div>
+            
+            {/* Tag Filter */}
+            <div>
+              <label htmlFor="tag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tag
+              </label>
+              <select
+                id="tag"
+                value={selectedTag}
+                onChange={(e) => setSelectedTag(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Tags</option>
+                {tags.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           
-          {/* Category Filter */}
-          <div>
-            <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category
-            </label>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+          {/* Clear Filters Button */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleResetFilters}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Type Filter */}
-          <div>
-            <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Type
-            </label>
-            <select
-              id="type"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">All Types</option>
-              <option value="note">Notes</option>
-              <option value="link">Links</option>
-              <option value="video">Videos</option>
-              <option value="document">Documents</option>
-            </select>
-          </div>
-          
-          {/* Tag Filter */}
-          <div>
-            <label htmlFor="tag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tag
-            </label>
-            <select
-              id="tag"
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">All Tags</option>
-              {tags.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
+              Clear Filters
+            </button>
           </div>
         </div>
         
-        {/* Clear Filters Button */}
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={handleResetFilters}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-      
-      {/* Resources Display */}
-      {loading ? (
-        <div className="mt-8 flex h-64 items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-          <span className="ml-3 text-lg">Loading resources...</span>
-        </div>
-      ) : error ? (
-        <div className="mt-8 rounded-lg bg-red-100 p-4 dark:bg-red-900/30">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        {/* Error State */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-900/30 dark:text-red-200">
+            {error}
+          </div>
+        )}
+        
+        {/* Loading State */}
+        {loading ? (
+          <div className="my-12 flex justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+          </div>
+        ) : resources.length === 0 ? (
+          <div className="rounded-lg bg-gray-50 p-12 text-center dark:bg-gray-800">
+            <div className="mx-auto mb-4 h-16 w-16 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                <p>{error}</p>
-                <p className="mt-2">
-                  Please verify your database connection in the{" "}
-                  <Link href="/db-test" className="font-medium underline">
-                    database test page
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : resources.length === 0 ? (
-        <div className="mt-8 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-            <FolderIcon className="h-16 w-16 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No resources found</h3>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            {searchTerm || selectedCategory || selectedType || selectedTag
-              ? "No resources match your current filters. Try changing or clearing your filters."
-              : "Get started by creating your first resource."}
-          </p>
-          <div className="mt-6">
-            <Link 
-              href="/resources/new" 
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">No resources found</h3>
+            <p className="mb-6 text-gray-500 dark:text-gray-400">
+              {searchTerm || selectedCategory || selectedType || selectedTag
+                ? 'Try adjusting your search or filter criteria'
+                : 'Get started by creating your first resource'}
+            </p>
+            <Link
+              href="/resources/new"
+              className="rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800"
             >
-              <PlusIcon className="mr-2 h-5 w-5" />
-              Add Resource
+              <PlusIcon className="mr-2 -ml-1 inline h-5 w-5" />
+              Add New Resource
             </Link>
           </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {resources.map((resource) => (
-            <ResourceCard 
-              key={resource._id} 
-              resource={resource} 
-              onDelete={() => handleDeleteResource(resource._id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+        ) : (
+          <>
+            {/* Resources Grid */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {visibleResources.map((resource) => (
+                <ResourceCard 
+                  key={resource._id} 
+                  resource={resource} 
+                  onDelete={() => handleDeleteResource(resource._id)} 
+                />
+              ))}
+            </div>
+            
+            {/* View More Button - Only show if there are more than the initial count */}
+            {!showAll && resources.length > INITIAL_RESOURCE_COUNT && (
+              <div className="mt-8 flex justify-center">
+                <Link 
+                  href="/resources/all"
+                  className="inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 dark:focus:ring-blue-800"
+                >
+                  View All Resources
+                  <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </PasswordProtection>
   )
 } 
