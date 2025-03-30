@@ -46,9 +46,9 @@ export default function ResourcesPage() {
   const [selectedTag, setSelectedTag] = useState<string>('')
   
   // Get all unique categories and tags from resources
-  const categories = [...new Set(resources.map(r => r.category))].filter(Boolean).sort()
+  const categories = Array.from(new Set(resources.map(r => r.category))).filter(Boolean).sort()
   const allTags = resources.flatMap(r => r.tags).filter(Boolean)
-  const tags = [...new Set(allTags)].sort()
+  const tags = Array.from(new Set(allTags)).sort()
   
   // Load resources
   useEffect(() => {
