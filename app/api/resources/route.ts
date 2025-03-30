@@ -18,7 +18,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
-    const client = await clientPromise;
+    // Try connecting to MongoDB
+    let client;
+    try {
+      client = await clientPromise;
+    } catch (error) {
+      console.error('MongoDB connection error:', error);
+      return NextResponse.json({ 
+        error: 'Database connection failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, { status: 500 });
+    }
+    
     const db = client.db('studymate');
     const resources = db.collection('resources');
     
@@ -34,46 +45,64 @@ export async function GET(request: Request) {
         
         return NextResponse.json(resource);
       } catch (error) {
-        return NextResponse.json({ error: 'Invalid resource ID' }, { status: 400 });
+        console.error('Error fetching resource by ID:', error);
+        return NextResponse.json({ 
+          error: 'Invalid resource ID or database error', 
+          details: error instanceof Error ? error.message : 'Unknown error' 
+        }, { status: 400 });
       }
     }
     
     // Otherwise, handle filters for multiple resources
-    const category = searchParams.get('category');
-    const type = searchParams.get('type');
-    const tag = searchParams.get('tag');
-    const search = searchParams.get('search');
-    
-    // Build the query
-    let query: any = {};
-    
-    if (category) {
-      query.category = category;
+    try {
+      const category = searchParams.get('category');
+      const type = searchParams.get('type');
+      const tag = searchParams.get('tag');
+      const search = searchParams.get('search');
+      
+      // Build the query
+      let query: any = {};
+      
+      if (category) {
+        query.category = category;
+      }
+      
+      if (type) {
+        query.type = type;
+      }
+      
+      if (tag) {
+        query.tags = { $in: [tag] };
+      }
+      
+      if (search) {
+        // Search in title and description
+        query.$or = [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ];
+      }
+      
+      const result = await resources.find(query).toArray();
+      
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error('Error fetching resources with filters:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch resources', 
+          details: error instanceof Error ? error.message : 'Unknown error' 
+        }, 
+        { status: 500 }
+      );
     }
-    
-    if (type) {
-      query.type = type;
-    }
-    
-    if (tag) {
-      query.tags = { $in: [tag] };
-    }
-    
-    if (search) {
-      // Search in title and description
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-    
-    const result = await resources.find(query).toArray();
-    
-    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching resources:', error);
+    console.error('Unexpected error in GET resources:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch resources' },
+      { 
+        error: 'Server error', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, 
       { status: 500 }
     );
   }
@@ -81,25 +110,48 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const client = await clientPromise;
+    // Try connecting to MongoDB
+    let client;
+    try {
+      client = await clientPromise;
+    } catch (error) {
+      console.error('MongoDB connection error during POST:', error);
+      return NextResponse.json({ 
+        error: 'Database connection failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, { status: 500 });
+    }
+    
     const db = client.db('studymate');
     const resources = db.collection('resources');
     
-    const data = await request.json();
+    // Parse request body with error handling
+    let data;
+    try {
+      data = await request.json();
+    } catch (error) {
+      console.error('Error parsing request JSON:', error);
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     
     // Detect URL type and fetch metadata
     if (data.url) {
-      data.urlMetadata = await getUrlMetadata(data.url);
-      
-      // Use metadata for title/description if not provided
-      if (data.urlMetadata) {
-        if (!data.title && data.urlMetadata.title) {
-          data.title = data.urlMetadata.title;
-        }
+      try {
+        data.urlMetadata = await getUrlMetadata(data.url);
         
-        if (!data.description && data.urlMetadata.description) {
-          data.description = data.urlMetadata.description;
+        // Use metadata for title/description if not provided
+        if (data.urlMetadata) {
+          if (!data.title && data.urlMetadata.title) {
+            data.title = data.urlMetadata.title;
+          }
+          
+          if (!data.description && data.urlMetadata.description) {
+            data.description = data.urlMetadata.description;
+          }
         }
+      } catch (error) {
+        console.error('Error getting URL metadata:', error);
+        // Continue without metadata if there's an error
       }
     }
     
@@ -107,16 +159,29 @@ export async function POST(request: Request) {
     data.createdAt = new Date();
     // data.userId = auth.currentUser?.uid; // Add user ID when auth is implemented
     
-    const result = await resources.insertOne(data);
+    // Ensure tags is an array (if missing or not an array)
+    if (!data.tags || !Array.isArray(data.tags)) {
+      data.tags = [];
+    }
     
-    return NextResponse.json({
-      _id: result.insertedId,
-      ...data
-    });
+    try {
+      const result = await resources.insertOne(data);
+      
+      return NextResponse.json({
+        _id: result.insertedId,
+        ...data
+      });
+    } catch (error) {
+      console.error('Error inserting resource into database:', error);
+      return NextResponse.json(
+        { error: 'Failed to create resource', details: error instanceof Error ? error.message : 'Unknown error' }, 
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error creating resource:', error);
+    console.error('Unexpected error in POST resources:', error);
     return NextResponse.json(
-      { error: 'Failed to create resource' },
+      { error: 'Server error', details: error instanceof Error ? error.message : 'Unknown error' }, 
       { status: 500 }
     );
   }
@@ -134,15 +199,38 @@ export async function PUT(request: Request) {
       );
     }
     
-    const client = await clientPromise;
+    // Try connecting to MongoDB
+    let client;
+    try {
+      client = await clientPromise;
+    } catch (error) {
+      console.error('MongoDB connection error during PUT:', error);
+      return NextResponse.json({ 
+        error: 'Database connection failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, { status: 500 });
+    }
+    
     const db = client.db('studymate');
     const resources = db.collection('resources');
     
-    const data = await request.json();
+    // Parse request body with error handling
+    let data;
+    try {
+      data = await request.json();
+    } catch (error) {
+      console.error('Error parsing request JSON:', error);
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     
     // Detect URL type and fetch metadata if URL has changed
     if (data.url) {
-      data.urlMetadata = await getUrlMetadata(data.url);
+      try {
+        data.urlMetadata = await getUrlMetadata(data.url);
+      } catch (error) {
+        console.error('Error getting URL metadata during update:', error);
+        // Continue without metadata if there's an error
+      }
     }
     
     // Add update timestamp
@@ -170,15 +258,16 @@ export async function PUT(request: Request) {
         ...updateData
       });
     } catch (error) {
+      console.error('Error updating resource:', error);
       return NextResponse.json(
-        { error: 'Invalid resource ID' },
-        { status: 400 }
+        { error: 'Failed to update resource', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
       );
     }
   } catch (error) {
-    console.error('Error updating resource:', error);
+    console.error('Unexpected error in PUT resources:', error);
     return NextResponse.json(
-      { error: 'Failed to update resource' },
+      { error: 'Server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -196,7 +285,18 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const client = await clientPromise;
+    // Try connecting to MongoDB
+    let client;
+    try {
+      client = await clientPromise;
+    } catch (error) {
+      console.error('MongoDB connection error during DELETE:', error);
+      return NextResponse.json({ 
+        error: 'Database connection failed', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      }, { status: 500 });
+    }
+    
     const db = client.db('studymate');
     const resources = db.collection('resources');
     
@@ -213,15 +313,16 @@ export async function DELETE(request: Request) {
       
       return NextResponse.json({ success: true });
     } catch (error) {
+      console.error('Error deleting resource:', error);
       return NextResponse.json(
-        { error: 'Invalid resource ID' },
-        { status: 400 }
+        { error: 'Failed to delete resource', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
       );
     }
   } catch (error) {
-    console.error('Error deleting resource:', error);
+    console.error('Unexpected error in DELETE resources:', error);
     return NextResponse.json(
-      { error: 'Failed to delete resource' },
+      { error: 'Server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
