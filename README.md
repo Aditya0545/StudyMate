@@ -1,174 +1,108 @@
 # StudyMate
 
-StudyMate is a comprehensive study resource management application built with Next.js, MongoDB, and Tailwind CSS. It allows users to organize study materials, add different types of resources, and manage a collection of study content.
+StudyMate is a web application for organizing and managing your study materials, including notes, videos, links, and documents.
 
 ## Features
 
-- Resource management (notes, links, YouTube videos, documents)
-- Light/dark mode support
-- Tag-based organization
-- YouTube video integration
-- Google Docs/Drive integration
-- Responsive design
+- Organize study materials with categories and tags
+- Support for multiple resource types (notes, links, videos, documents, Google Drive files)
+- Password-protected resources section for sensitive content
+- Responsive design for all devices
+- Dark mode support
 
-## Technology Stack
-
-- **Frontend**: Next.js, React, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: MongoDB
-- **Authentication**: Firebase (planned/optional)
-- **Deployment**: Netlify
-
-## Deployment to Netlify
+## Deployment on Netlify
 
 ### Prerequisites
 
-Before deploying StudyMate to Netlify, you need:
+- A GitHub account
+- A Netlify account
+- A MongoDB Atlas account (for database)
+- Google Drive API credentials (for Google Drive integration)
+- YouTube API key (for video metadata)
 
-1. A Netlify account
-2. A MongoDB Atlas database
-3. (Optional) A YouTube API key for enhanced video metadata
+### Step 1: Prepare Environment Variables
 
-### Deployment Steps
+In your Netlify dashboard, go to **Site settings > Build & deploy > Environment variables** and add the following variables:
 
-1. **Push your code to GitHub**:
-   Ensure your code is in a GitHub repository.
+```
+# MongoDB Configuration
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/studymate?retryWrites=true&w=majority
 
-2. **Import your project to Netlify**:
-   - Go to [netlify.com](https://netlify.com)
-   - Log in and click "Add new site" → "Import an existing project"
-   - Connect to your GitHub repository
-   - Select the StudyMate repository
+# Firebase Configuration
+FIREBASE_API_KEY=your-firebase-api-key
+FIREBASE_AUTH_DOMAIN=your-firebase-project.firebaseapp.com
+FIREBASE_PROJECT_ID=your-firebase-project
+FIREBASE_STORAGE_BUCKET=your-firebase-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+FIREBASE_APP_ID=your-firebase-app-id
 
-3. **Configure build settings**:
+# Google Drive API Configuration
+GOOGLE_DRIVE_CLIENT_ID=your-google-client-id
+GOOGLE_DRIVE_CLIENT_SECRET=your-google-client-secret
+NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_GOOGLE_DRIVE_API_KEY=your-google-api-key
+
+# YouTube API Configuration
+YOUTUBE_API_KEY=your-youtube-api-key
+
+# Resources Section Protection
+RESOURCES_PASSWORD=your-secure-password
+```
+
+### Step 2: Deploy to Netlify
+
+1. Connect your GitHub repository to Netlify
+2. Configure the build settings:
    - Build command: `npm run build`
    - Publish directory: `.next`
+3. Deploy the site
 
-4. **Set up environment variables**:
-   Add the following environment variables in the Netlify dashboard (Site settings → Environment variables):
-   - `MONGODB_URI`: Your MongoDB connection string
-   - `YOUTUBE_API_KEY`: (Optional) Your YouTube API key
+### Step 3: Configure Netlify Functions
 
-5. **Deploy**:
-   Click "Deploy site" and Netlify will build and deploy your application.
+Netlify Functions are used to handle API routes. The configuration is already set in the `netlify.toml` file.
 
-6. **Configure MongoDB Network Access**:
-   Ensure your MongoDB Atlas cluster allows connections from Netlify by adding 0.0.0.0/0 to your IP access list in MongoDB Atlas (or use a more restricted range if you prefer).
+### Step 4: Add MongoDB Add-on (Optional)
+
+1. Go to **Site settings > Add-ons**
+2. Search for and add the MongoDB Atlas add-on if you prefer a managed MongoDB solution
 
 ## Local Development
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Create a `.env.local` file with the following variables:
-   ```
-   MONGODB_URI=your_mongodb_connection_string
-   YOUTUBE_API_KEY=your_youtube_api_key (optional)
-   ```
-4. Run the development server: `npm run dev`
-5. Open [http://localhost:3000](http://localhost:3000)
-
-## Notes
-
-- The application can run without a YouTube API key, but will use fallback metadata extraction
-- For full functionality, configure all the required environment variables
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 16.x or higher
-- npm or yarn
-- MongoDB Atlas account
-- Firebase project
-- YouTube Data API key
-
-### Environment Setup
-
-1. Clone the repository
-2. Copy `.env.local.example` to `.env.local`
-3. Fill in the required environment variables:
-
-```
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
-
-# MongoDB Configuration
-MONGODB_URI=your_mongodb_connection_string
-
-# YouTube API Configuration
-NEXT_PUBLIC_YOUTUBE_API_KEY=your_youtube_api_key
-```
-
-### Installation
-
 ```bash
+# Install dependencies
 npm install
-# or
-yarn install
-```
 
-### Development
-
-```bash
+# Run the development server
 npm run dev
-# or
-yarn dev
+
+# Build for production
+npm run build
+
+# Start the production server
+npm run start
 ```
 
-The application will be available at http://localhost:3000
+## Environment Variables
 
-## API Integrations
-
-### Firebase Authentication
-
-This application uses Firebase for user authentication. To set up Firebase:
-
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Add a web app to your project
-3. Enable Authentication and set up the providers you want (Email/Password, Google, etc.)
-4. Copy the Firebase configuration to your `.env.local` file
-
-### MongoDB
-
-StudyMate uses MongoDB to store resource data. To set up MongoDB:
-
-1. Create a MongoDB Atlas account and cluster
-2. Create a database named `studymate`
-3. Add a collection called `resources`
-4. Get your connection string and add it to the `.env.local` file
-
-### YouTube API
-
-To enable YouTube video embedding and metadata fetching:
-
-1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the YouTube Data API v3
-3. Create an API key
-4. Add the API key to your `.env.local` file
-
-## Project Structure
+Create a `.env.local` file in the root directory with the following variables:
 
 ```
-studymate/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── components/        # Reusable components
-│   ├── lib/              # Utility functions
-│   └── pages/            # Page components
-├── public/               # Static files
-├── styles/              # Global styles
-└── types/               # TypeScript type definitions
+# See .env.production for all required variables
 ```
 
-## Contributing
+## Troubleshooting
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+### API Routes Not Working
+
+- Check that the Netlify functions are deployed correctly
+- Verify that MongoDB connection string is correct
+- Check Netlify function logs for errors
+
+### Authentication Issues
+
+- Make sure Firebase configuration is correct
+- Check that Google Drive API credentials are set up correctly
+
+## License
+
+MIT 

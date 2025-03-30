@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/app/lib/mongodb';
 import { getVideoMetadata } from '@/app/lib/youtube';
 import { auth } from '@/app/lib/firebase';
 import { ObjectId } from 'mongodb';
+import { cookies } from 'next/headers';
 
 interface UrlMetadata {
   type: string;  // 'youtube', 'gdocs', 'gsheets', 'gslides', 'gdrive', 'other'
@@ -11,9 +12,32 @@ interface UrlMetadata {
   thumbnail?: string;
   author?: string;
   publishedAt?: string;
+  fileId?: string;
+  mimeType?: string;
+  embedLink?: string;
+  webViewLink?: string;
 }
 
-export async function GET(request: Request) {
+// Helper function to check if the request is authenticated
+async function isAuthenticated(request: NextRequest) {
+  // Check for authentication in the request cookies
+  const cookieStore = cookies();
+  const isAuthenticated = cookieStore.get('resources_authenticated')?.value === 'true';
+  
+  // For API requests that may not have cookies, also check the Authorization header
+  const authHeader = request.headers.get('Authorization');
+  const correctPassword = process.env.RESOURCES_PASSWORD;
+  const headerAuthenticated = authHeader === `Bearer ${correctPassword}`;
+  
+  return isAuthenticated || headerAuthenticated;
+}
+
+export async function GET(request: NextRequest) {
+  // Check authentication
+  if (!await isAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -108,7 +132,12 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Check authentication
+  if (!await isAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     // Try connecting to MongoDB
     let client;
@@ -187,7 +216,12 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  // Check authentication
+  if (!await isAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -273,7 +307,12 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
+  // Check authentication
+  if (!await isAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -333,6 +372,19 @@ async function getUrlMetadata(url: string): Promise<UrlMetadata | null> {
   if (!url) return null;
   
   try {
+    // Check for Drive URLs starting with 'drive:'
+    if (url.startsWith('drive:')) {
+      const fileId = url.split('drive:')[1];
+      return { 
+        type: 'gdocs',
+        title: 'Google Document',
+        fileId: fileId,
+        mimeType: 'application/vnd.google-apps.document',
+        embedLink: `https://docs.google.com/document/d/${fileId}/preview`,
+        webViewLink: `https://docs.google.com/document/d/${fileId}/edit`
+      };
+    }
+    
     // Check for YouTube URLs
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       const videoMetadata = await getVideoMetadata(url);
