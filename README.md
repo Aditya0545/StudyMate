@@ -17,15 +17,15 @@ StudyMate is a comprehensive study resource management application built with Ne
 - **Backend**: Next.js API Routes
 - **Database**: MongoDB
 - **Authentication**: Firebase (planned/optional)
-- **Deployment**: Vercel
+- **Deployment**: Netlify
 
-## Deployment to Vercel
+## Deployment to Netlify
 
 ### Prerequisites
 
-Before deploying StudyMate to Vercel, you need:
+Before deploying StudyMate to Netlify, you need:
 
-1. A Vercel account
+1. A Netlify account
 2. A MongoDB Atlas database
 3. (Optional) A YouTube API key for enhanced video metadata
 
@@ -34,22 +34,26 @@ Before deploying StudyMate to Vercel, you need:
 1. **Push your code to GitHub**:
    Ensure your code is in a GitHub repository.
 
-2. **Import your project to Vercel**:
-   - Go to [vercel.com](https://vercel.com)
-   - Log in and click "New Project"
-   - Import your GitHub repository
-   - Configure project settings
+2. **Import your project to Netlify**:
+   - Go to [netlify.com](https://netlify.com)
+   - Log in and click "Add new site" → "Import an existing project"
+   - Connect to your GitHub repository
+   - Select the StudyMate repository
 
-3. **Set up environment variables**:
-   Add the following environment variables in the Vercel dashboard:
+3. **Configure build settings**:
+   - Build command: `npm run build`
+   - Publish directory: `.next`
+
+4. **Set up environment variables**:
+   Add the following environment variables in the Netlify dashboard (Site settings → Environment variables):
    - `MONGODB_URI`: Your MongoDB connection string
    - `YOUTUBE_API_KEY`: (Optional) Your YouTube API key
 
-4. **Deploy**:
-   Click "Deploy" and Vercel will build and deploy your application.
+5. **Deploy**:
+   Click "Deploy site" and Netlify will build and deploy your application.
 
-5. **Configure MongoDB Network Access**:
-   Ensure your MongoDB Atlas cluster allows connections from Vercel by adding 0.0.0.0/0 to your IP access list in MongoDB Atlas (or use a more restricted range if you prefer).
+6. **Configure MongoDB Network Access**:
+   Ensure your MongoDB Atlas cluster allows connections from Netlify by adding 0.0.0.0/0 to your IP access list in MongoDB Atlas (or use a more restricted range if you prefer).
 
 ## Local Development
 
