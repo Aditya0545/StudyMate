@@ -8,5 +8,12 @@
   "env": {
     "MONGODB_URI": "MONGODB_URI environment variable will be set in the Vercel dashboard",
     "YOUTUBE_API_KEY": "YOUTUBE_API_KEY environment variable will be set in the Vercel dashboard"
+  },
+  "crons": [],
+  "functions": {
+    "app/api/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
   }
 } 

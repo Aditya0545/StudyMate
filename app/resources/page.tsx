@@ -55,6 +55,7 @@ export default function ResourcesPage() {
     const fetchResources = async () => {
       try {
         setLoading(true)
+        setError(null)
         
         const params = new URLSearchParams()
         if (selectedCategory) params.append('category', selectedCategory)
@@ -63,17 +64,32 @@ export default function ResourcesPage() {
         if (searchTerm) params.append('search', searchTerm)
         
         const queryString = params.toString() ? `?${params.toString()}` : ''
-        const response = await fetch(`/api/resources${queryString}`)
+        const url = `/api/resources${queryString}`
+        console.log('Fetching resources from:', url)
+        
+        const response = await fetch(url)
         
         if (!response.ok) {
-          throw new Error('Failed to fetch resources')
+          const errorData = await response.json().catch(() => ({}))
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: errorData
+          })
+          throw new Error(`API error: ${response.status} ${response.statusText}`)
         }
         
         const data = await response.json()
+        console.log(`Loaded ${data.length} resources`)
         setResources(data)
       } catch (err) {
         console.error('Error fetching resources:', err)
-        setError('Failed to load resources. Please try again.')
+        // Check if we're in development or production
+        if (process.env.NODE_ENV === 'development') {
+          setError(`Failed to load resources: ${err instanceof Error ? err.message : String(err)}. Check the console for more details.`)
+        } else {
+          setError('Failed to load resources. This may be due to a database connection issue. Please check your environment variables in Vercel.')
+        }
       } finally {
         setLoading(false)
       }
