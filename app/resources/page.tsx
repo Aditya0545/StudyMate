@@ -58,6 +58,21 @@ export default function ResourcesPage() {
         setLoading(true)
         setError(null)
         
+        // First, check environment variables
+        console.log('Checking environment variables...')
+        try {
+          const envCheckResponse = await fetch('/api/env-check')
+          const envData = await envCheckResponse.json()
+          console.log('Environment check:', envData)
+          
+          // If MongoDB URI doesn't exist in production, show a helpful error
+          if (!envData.mongodb_uri_exists && envData.node_env === 'production') {
+            throw new Error('MongoDB URI is not set in Vercel environment variables')
+          }
+        } catch (envError) {
+          console.error('Environment check error:', envError)
+        }
+        
         // Build query parameters
         const params = new URLSearchParams()
         if (selectedCategory) params.append('category', selectedCategory)
@@ -68,37 +83,140 @@ export default function ResourcesPage() {
         const queryString = params.toString() ? `?${params.toString()}` : ''
         const url = `/api/resources${queryString}`
         
-        console.log('Fetching resources:', { url, timestamp: new Date().toISOString() })
+        console.log('Fetching resources:', { 
+          url, 
+          params: {
+            category: selectedCategory,
+            type: selectedType,
+            tag: selectedTag,
+            search: searchTerm
+          },
+          timestamp: new Date().toISOString() 
+        })
+        
+        // Try fetching debug info first if there's a problem
+        let shouldTryDebug = false
         
         // Use fetch with explicit options
         const response = await fetch(url, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache' 
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
           },
           cache: 'no-store',
           next: { revalidate: 0 }
         })
         
-        // Check for successful response
         if (!response.ok) {
+          shouldTryDebug = true
           const errorText = await response.text().catch(() => 'Unknown error')
           console.error('API Error Response:', {
             status: response.status,
             statusText: response.statusText,
             data: errorText
           })
+          
+          // If no resources found, try to create a demo resource
+          if (!selectedCategory && !selectedType && !selectedTag && !searchTerm) {
+            console.log('Trying to create a demo resource...')
+            try {
+              const demoResponse = await fetch('/api/create-demo-resource')
+              const demoData = await demoResponse.json()
+              console.log('Demo resource creation result:', demoData)
+              
+              if (demoData.success) {
+                // Retry fetching resources after creating demo resource
+                console.log('Retrying resource fetch after demo creation...')
+                const retryResponse = await fetch('/api/resources', {
+                  cache: 'no-store',
+                  headers: { 'Cache-Control': 'no-cache, no-store' }
+                })
+                
+                if (retryResponse.ok) {
+                  const retryData = await retryResponse.json()
+                  console.log(`Loaded ${retryData.length} resources after demo creation`)
+                  setResources(retryData)
+                  return // Exit function if successful
+                }
+              }
+            } catch (demoError) {
+              console.error('Error creating demo resource:', demoError)
+            }
+          }
+          
           throw new Error(`API error: ${response.status} ${response.statusText}`)
         }
         
         // Parse JSON response
-        const data = await response.json()
-        console.log(`Loaded ${data.length} resources`)
-        setResources(data)
+        let data
+        try {
+          data = await response.json()
+          console.log(`Loaded ${data.length} resources`, { 
+            timestamp: new Date().toISOString(),
+            sampleId: data.length > 0 ? data[0]._id : 'none' 
+          })
+          setResources(data)
+        } catch (jsonError) {
+          shouldTryDebug = true
+          console.error('Error parsing JSON response:', jsonError)
+          throw new Error('Failed to parse API response')
+        }
+        
+        // If no resources found and no filters applied, try to create a demo resource
+        if (data.length === 0 && !selectedCategory && !selectedType && !selectedTag && !searchTerm) {
+          console.log('No resources found, trying to create a demo resource...')
+          try {
+            const demoResponse = await fetch('/api/create-demo-resource')
+            const demoData = await demoResponse.json()
+            console.log('Demo resource creation result:', demoData)
+            
+            if (demoData.success) {
+              // Retry fetching resources after creating demo resource
+              console.log('Retrying resource fetch after demo creation...')
+              const retryResponse = await fetch('/api/resources', {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache, no-store' }
+              })
+              
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json()
+                console.log(`Loaded ${retryData.length} resources after demo creation`)
+                setResources(retryData)
+              }
+            }
+          } catch (demoError) {
+            console.error('Error creating demo resource:', demoError)
+          }
+        }
+        
+        // If anything went wrong, fetch debug info
+        if (shouldTryDebug) {
+          try {
+            console.log('Fetching debug info due to error')
+            await fetch('/api/debug-resources')
+              .then(res => res.json())
+              .then(debug => console.log('Debug info:', debug))
+              .catch(err => console.error('Failed to fetch debug info:', err))
+          } catch (debugError) {
+            console.error('Error fetching debug info:', debugError)
+          }
+        }
       } catch (err) {
         console.error('Error fetching resources:', err)
-        setError('Failed to load resources. Please try again later.')
+        setError(`Failed to load resources. Please check the console for details or try again later.`)
+        
+        // Try to get additional debug information
+        try {
+          console.log('Fetching debug info due to catch block')
+          await fetch('/api/debug-resources')
+            .then(res => res.json())
+            .then(debug => console.log('Debug info:', debug))
+            .catch(err => console.error('Failed to fetch debug info:', err))
+        } catch (debugError) {
+          console.error('Error fetching debug info:', debugError)
+        }
       } finally {
         setLoading(false)
       }
