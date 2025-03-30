@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "regions": ["iad1"],
+  "env": {
+    "MONGODB_URI": "MONGODB_URI environment variable will be set in the Vercel dashboard",
+    "YOUTUBE_API_KEY": "YOUTUBE_API_KEY environment variable will be set in the Vercel dashboard"
+  }
+} 
