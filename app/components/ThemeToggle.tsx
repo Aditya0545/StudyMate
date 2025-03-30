@@ -24,11 +24,15 @@ export default function ThemeToggle() {
   }
 
   // Now we can safely use the theme context
-  const { isDark, toggle } = useTheme()
+  const { isDark, setTheme } = useTheme()
+
+  const toggleTheme = () => {
+    setTheme(isDark ? 'light' : 'dark')
+  }
 
   return (
     <button
-      onClick={toggle}
+      onClick={toggleTheme}
       className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       aria-label="Toggle theme"
     >
