@@ -24,8 +24,6 @@
   included_files = [".env", ".env.production", ".env.local", ".env.production.local"]
   # Keep key external modules external (not bundled)
   external_node_modules = ["mongodb"]
-  # Set a generous timeout for cold starts
-  timeout = 30
 
 # Configure specific functions with different settings
 [functions.api]
