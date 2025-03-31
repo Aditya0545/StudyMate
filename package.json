@@ -11,6 +11,8 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.2.0",
+    "@netlify/functions": "^3.0.4",
+    "@netlify/next": "^1.4.9",
     "@types/js-cookie": "^3.0.6",
     "autoprefixer": "^10",
     "axios": "^1.6.7",

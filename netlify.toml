@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18.17.0"
@@ -15,9 +16,18 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Redirect function for server-side rendered pages
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/next_server"
+  status = 200
+  force = false
+  conditions = {Country = ["US"], Role = ["admin"]}
+
 [functions]
+  node_bundler = "esbuild"
   included_files = ["node_modules/mongodb/**"]
-  external_node_modules = ["mongodb"]
+  external_node_modules = ["mongodb", "@netlify/next", "@netlify/functions"]
   
 [dev]
   framework = "next"
@@ -33,4 +43,11 @@
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization" 
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Add these environment variables for deployment
+[build.environment.file]
+  ".env" = false
+  ".env.production" = true
+  ".env.local" = false
+  ".env.production.local" = true 

@@ -1,14 +1,21 @@
-// Netlify Function to test that serverless functions are working
-exports.handler = async function(event, context) {
+const { builder } = require('@netlify/functions');
+
+/**
+ * Simple hello world function to test if Netlify Functions are working
+ */
+async function handler(event, context) {
   return {
     statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
-      message: "Hello from StudyMate Netlify Function!",
+      message: 'Hello from StudyMate!',
       timestamp: new Date().toISOString(),
-      env: {
-        nodeEnv: process.env.NODE_ENV,
-        mongodb: process.env.MONGODB_URI ? "Configured" : "Not configured"
-      }
-    })
+      nodeVersion: process.version,
+      env: process.env.NODE_ENV
+    }),
   };
-}; 
+}
+
+exports.handler = builder(handler); 
