@@ -1,61 +1,45 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
-// Log MongoDB connection attempt for debugging purposes
-console.log('Initializing MongoDB client');
+// Environment detection
+const isDev = process.env.NODE_ENV !== 'production';
+console.log('MongoDB Client Environment:', process.env.NODE_ENV);
+console.log('Creating MongoDB client in', isDev ? 'development' : 'production', 'mode');
 
-if (!process.env.MONGODB_URI) {
-  console.error('MongoDB URI is missing. Please add it to environment variables.');
+// Configuration
+const MONGODB_URI = process.env.MONGODB_URI || '';
+const MONGODB_DB = process.env.MONGODB_DB || 'studymate';
+
+// Check the MongoDB URI
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable');
 }
 
-const uri = process.env.MONGODB_URI || '';
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  // Add these options for better compatibility with serverless environments
-  maxPoolSize: 10,
-  minPoolSize: 1,
-  maxIdleTimeMS: 15000,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 30000,
-};
+// Global MongoDB client promise
+let cachedClient: MongoClient;
+let cachedDb: any;
 
-// Global MongoDB client variable for connection pooling across serverless functions
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-console.log(`MongoDB Client Environment: ${process.env.NODE_ENV}`);
-
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>;
-  };
-
-  if (!globalWithMongo._mongoClientPromise) {
-    console.log('Creating new MongoDB client in development mode');
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect().catch(err => {
-      console.error('Failed to connect to MongoDB in development:', err);
-      throw err;
-    });
-  } else {
-    console.log('Reusing existing MongoDB client in development mode');
+/**
+ * Global promise for the MongoDB client
+ */
+let clientPromise: Promise<MongoClient> = (async function() {
+  // In development mode, use a global variable to preserve the value
+  // across module reloads caused by HMR (Hot Module Replacement).
+  if (isDev) {
+    // @ts-ignore
+    if (!global._mongoClientPromise) {
+      console.log('Initializing MongoDB client');
+      const client = new MongoClient(MONGODB_URI);
+      // @ts-ignore
+      global._mongoClientPromise = client.connect();
+    }
+    // @ts-ignore
+    return global._mongoClientPromise;
   }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In production mode, create a new client for each connection
-  console.log('Creating MongoDB client in production mode');
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect().catch(err => {
-    console.error('Failed to connect to MongoDB in production:', err);
-    throw err;
-  });
-}
 
-// Export a module-scoped MongoClient promise. By doing this in a
-// separate module, the client can be shared across functions.
+  // In production mode, create a new client for each connection
+  console.log('Initializing MongoDB client');
+  const client = new MongoClient(MONGODB_URI);
+  return client.connect();
+})();
+
 export default clientPromise; 
