@@ -30,6 +30,7 @@
 # Configure specific functions with different settings
 [functions.api]
   included_files = [".env*"]
+  external_node_modules = ["@netlify/functions", "@netlify/next"]
 
 [functions.next_server]
   included_files = [".env*"]
