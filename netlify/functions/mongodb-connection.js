@@ -3,35 +3,27 @@ const { builder } = require('@netlify/functions');
 
 // Cached connection
 let cachedDb = null;
+let client = null;
 
 /**
  * Connect to MongoDB database
  * @returns {Promise<import('mongodb').Db>} MongoDB database instance
  */
 async function connectToDatabase() {
-  // If the connection is already established, return the cached connection
-  if (cachedDb) {
-    return cachedDb;
-  }
-
-  // Check if MongoDB URI is set
+  if (cachedDb) return cachedDb;
+  
   if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI environment variable is not set');
+    throw new Error('MONGODB_URI not set');
   }
 
-  // Connect to MongoDB
   try {
-    // Use MongoClient directly to reduce function size
-    const client = new MongoClient(process.env.MONGODB_URI);
+    client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
-    const db = client.db('studymate');
-    
-    // Cache the database connection and return it
-    cachedDb = db;
-    return db;
+    cachedDb = client.db('studymate');
+    return cachedDb;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw new Error(`Error connecting to MongoDB: ${error.message}`);
+    console.error('MongoDB error:', error);
+    throw error;
   }
 }
 
@@ -48,18 +40,14 @@ async function handler(event, context) {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        status: 'success',
-        message: 'Connected to MongoDB successfully',
+        status: 'ok',
         collections: collections.map(c => c.name)
       })
     };
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        status: 'error',
-        message: error.message
-      })
+      body: JSON.stringify({ error: error.message })
     };
   }
 }

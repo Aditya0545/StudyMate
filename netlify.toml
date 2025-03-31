@@ -20,10 +20,27 @@
 [functions]
   # Use more efficient bundling
   node_bundler = "esbuild"
-  # Only include truly necessary files
-  included_files = []
+  # Only include truly necessary files - explicitly list the minimal files needed
+  included_files = [".env", ".env.production", ".env.local", ".env.production.local"]
   # Keep key external modules external (not bundled)
-  external_node_modules = ["mongodb", "@netlify/next", "@netlify/functions"]
+  external_node_modules = ["mongodb"]
+  # Set a generous timeout for cold starts
+  timeout = 30
+
+# Configure specific functions with different settings
+[functions.api]
+  included_files = [".env*"]
+
+[functions.next_server]
+  included_files = [".env*"]
+  external_node_modules = ["next", "react", "react-dom"]
+
+[functions.hello]
+  included_files = []
+
+[functions.mongodb-connection]
+  external_node_modules = ["mongodb"]
+  included_files = [".env*"]
 
 [dev]
   framework = "next"
@@ -39,4 +56,15 @@
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization" 
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Static assets caching
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/next_server"
+  status = 200 
