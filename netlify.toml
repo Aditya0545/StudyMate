@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node ./scripts/setup-env.js && npm run build"
   publish = ".next"
   functions = "netlify/functions"
 
@@ -10,9 +10,6 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[[plugins]]
-  package = "./netlify-build-plugin.js"
 
 [[redirects]]
   from = "/api/*"
