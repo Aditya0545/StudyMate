@@ -11,6 +11,9 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+[[plugins]]
+  package = "./netlify-build-plugin.js"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
@@ -22,7 +25,6 @@
   to = "/.netlify/functions/next_server"
   status = 200
   force = false
-  conditions = {Country = ["US"], Role = ["admin"]}
 
 [functions]
   node_bundler = "esbuild"
@@ -43,11 +45,4 @@
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-
-# Add these environment variables for deployment
-[build.environment.file]
-  ".env" = false
-  ".env.production" = true
-  ".env.local" = false
-  ".env.production.local" = true 
+    Access-Control-Allow-Headers = "Content-Type, Authorization" 
