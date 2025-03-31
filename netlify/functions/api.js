@@ -1,17 +1,9 @@
-const { builder } = require('@netlify/functions');
+// Import only what's needed
 const { createRequestHandler } = require('@netlify/next');
 
-// Path to Next.js built files
-const distDir = './.next';
-
-// Create handler function for Next.js API routes
-const handler = async (event, context) => {
-  const nextHandler = createRequestHandler({
-    build: { distDir }
-  });
-  
-  return nextHandler(event, context);
-};
-
-// Export handler function with appropriate settings
-exports.handler = builder(handler); 
+// Simplified handler for Next.js API routes
+exports.handler = createRequestHandler({
+  build: { 
+    dir: './.next' 
+  }
+}); 

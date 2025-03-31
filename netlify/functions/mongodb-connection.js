@@ -21,11 +21,9 @@ async function connectToDatabase() {
 
   // Connect to MongoDB
   try {
-    const client = await MongoClient.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    // Use MongoClient directly to reduce function size
+    const client = new MongoClient(process.env.MONGODB_URI);
+    await client.connect();
     const db = client.db('studymate');
     
     // Cache the database connection and return it

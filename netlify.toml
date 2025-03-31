@@ -11,28 +11,25 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Use Netlify's built-in API proxy pattern instead of serverless functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
 
-# Redirect function for server-side rendered pages
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/next_server"
-  status = 200
-  force = false
-
 [functions]
+  # Use more efficient bundling
   node_bundler = "esbuild"
-  included_files = ["node_modules/mongodb/**"]
+  # Only include truly necessary files
+  included_files = []
+  # Keep key external modules external (not bundled)
   external_node_modules = ["mongodb", "@netlify/next", "@netlify/functions"]
-  
+
 [dev]
   framework = "next"
   targetPort = 3000
 
-# Netlify uses Edge Functions to improve performance
+# Enable compression for HTML
 [build.processing.html]
   pretty_urls = true
 

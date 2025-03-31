@@ -1,0 +1,10 @@
+{
+  "name": "studymate-functions",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "mongodb": "^6.0.0",
+    "@netlify/functions": "^2.0.0",
+    "@netlify/next": "^1.1.0"
+  }
+} 
