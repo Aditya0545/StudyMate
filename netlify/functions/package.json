@@ -1,0 +1,15 @@
+{
+  "name": "studymate-functions",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "mongodb": "^5.7.0"
+  },
+  "peerDependencies": {
+    "next": "^13.4.19",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@netlify/functions": "^2.0.0",
+    "@netlify/next": "^1.4.0"
+  }
+} 

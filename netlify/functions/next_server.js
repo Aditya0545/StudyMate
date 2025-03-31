@@ -1,13 +1,10 @@
-const { builder } = require('@netlify/functions');
+// Import only what's needed
 const { createServerHandler } = require('@netlify/next');
 
 // Path to Next.js app
 const distDir = './.next';
 
-// Create handler for server-side rendered pages
-const handler = createServerHandler({
+// Simplified handler for Netlify Functions
+exports.handler = createServerHandler({
   distDir,
-});
-
-// Export the handler for Netlify Functions
-exports.handler = builder(handler); 
+}); 

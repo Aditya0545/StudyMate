@@ -3,7 +3,8 @@ const { builder } = require('@netlify/functions');
 /**
  * Simple hello world function to test if Netlify Functions are working
  */
-async function handler(event, context) {
+// Simple hello world function
+exports.handler = async function() {
   return {
     statusCode: 200,
     headers: {
@@ -11,11 +12,7 @@ async function handler(event, context) {
     },
     body: JSON.stringify({
       message: 'Hello from StudyMate!',
-      timestamp: new Date().toISOString(),
-      nodeVersion: process.version,
-      env: process.env.NODE_ENV
+      timestamp: new Date().toISOString()
     }),
   };
-}
-
-exports.handler = builder(handler); 
+}; 
