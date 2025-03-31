@@ -29,11 +29,9 @@
 
 # Configure specific functions with different settings
 [functions.api]
-  included_files = [".env*"]
   external_node_modules = ["@netlify/functions", "@netlify/next"]
 
 [functions.next_server]
-  included_files = [".env*"]
   external_node_modules = ["next", "react", "react-dom"]
 
 [functions.hello]
@@ -41,7 +39,6 @@
 
 [functions.mongodb-connection]
   external_node_modules = ["mongodb"]
-  included_files = [".env*"]
 
 [dev]
   framework = "next"
