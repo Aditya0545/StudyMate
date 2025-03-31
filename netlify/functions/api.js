@@ -1,9 +1,17 @@
+const { builder } = require('@netlify/functions');
 const { createRequestHandler } = require('@netlify/next');
 
-// Create a handler for Next.js API routes on Netlify
-module.exports.handler = createRequestHandler({
-  build: {
-    // Path to Next.js build output
-    dir: './.next',
-  },
-}); 
+// Path to Next.js built files
+const distDir = './.next';
+
+// Create handler function for Next.js API routes
+const handler = async (event, context) => {
+  const nextHandler = createRequestHandler({
+    build: { distDir }
+  });
+  
+  return nextHandler(event, context);
+};
+
+// Export handler function with appropriate settings
+exports.handler = builder(handler); 
