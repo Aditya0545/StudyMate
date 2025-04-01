@@ -3,6 +3,8 @@ import clientPromise from '@/app/lib/mongodb';
 import { getVideoMetadata } from '@/app/lib/youtube';
 import { auth } from '@/app/lib/firebase';
 import { ObjectId } from 'mongodb';
+import { requireAuth } from '@/app/lib/auth';
+import { validateResource } from '@/app/lib/validation';
 
 interface UrlMetadata {
   type: string;  // 'youtube', 'gdocs', 'gsheets', 'gslides', 'gdrive', 'other'
@@ -110,6 +112,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    requireAuth(); // Check authentication
+    
     // Try connecting to MongoDB
     let client;
     try {
@@ -132,6 +136,15 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('Error parsing request JSON:', error);
       return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
+    // Validate resource data
+    const validation = validateResource(data);
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: 'Invalid resource data', 
+        details: validation.errors 
+      }, { status: 400 });
     }
     
     // Detect URL type and fetch metadata
@@ -157,7 +170,6 @@ export async function POST(request: Request) {
     
     // Add timestamp and user info
     data.createdAt = new Date();
-    // data.userId = auth.currentUser?.uid; // Add user ID when auth is implemented
     
     // Ensure tags is an array (if missing or not an array)
     if (!data.tags || !Array.isArray(data.tags)) {
@@ -189,6 +201,8 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    requireAuth(); // Check authentication
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -221,6 +235,15 @@ export async function PUT(request: Request) {
     } catch (error) {
       console.error('Error parsing request JSON:', error);
       return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
+    // Validate resource data
+    const validation = validateResource(data);
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: 'Invalid resource data', 
+        details: validation.errors 
+      }, { status: 400 });
     }
     
     // Detect URL type and fetch metadata if URL has changed
@@ -275,6 +298,8 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    requireAuth(); // Check authentication
+    
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     

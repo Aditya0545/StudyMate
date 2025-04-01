@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
 import ResourceCard from '@/app/components/ResourceCard'
 
-type ResourceType = 'note' | 'link' | 'video' | 'document'
+type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
 interface Resource {
   _id: string
@@ -36,6 +37,7 @@ interface Resource {
 }
 
 export default function ResourcesPage() {
+  const router = useRouter()
   const [resources, setResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -255,11 +257,34 @@ export default function ResourcesPage() {
     setSelectedType('')
     setSelectedTag('')
   }
-  
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
+        <div className="flex gap-4">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+            Logout
+          </button>
+        </div>
+      </div>
+      
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Resources</h1>
         <Link
           href="/resources/new"
           className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
@@ -323,6 +348,7 @@ export default function ResourcesPage() {
               <option value="link">Links</option>
               <option value="video">Videos</option>
               <option value="document">Documents</option>
+              <option value="command">Commands</option>
             </select>
           </div>
           

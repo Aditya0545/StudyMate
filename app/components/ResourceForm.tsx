@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import YoutubePreview from './YoutubePreview'
 import { getVideoMetadata } from '@/app/lib/youtube'
 
-type ResourceType = 'note' | 'link' | 'video' | 'document'
+type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
 interface ResourceFormProps {
   initialData?: {
@@ -62,15 +62,15 @@ export default function ResourceForm({
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
   const [showVideoPreview, setShowVideoPreview] = useState(false)
   
-  // Resource categories based on PRD
+  // Updated categories
   const categories = [
-    'AI',
-    'Programming',
-    'Cybersecurity',
-    'Math',
-    'Science',
-    'Language',
-    'History',
+    'Machine Learning',
+    'Web Development',
+    'Java',
+    'Software Engineering',
+    'GDG',
+    'Computer Networks',
+    'Compiler Design',
     'Other'
   ]
 
@@ -88,7 +88,7 @@ export default function ResourceForm({
         resetData.url = ''
       }
       
-      if (value !== 'note') {
+      if (value !== 'note' && value !== 'command') {
         resetData.content = ''
       }
       
@@ -197,19 +197,19 @@ export default function ResourceForm({
       }
     }
     
-    if (formData.type === 'note' && !formData.content?.trim()) {
-      newErrors.content = 'Content is required for notes'
+    if ((formData.type === 'note' || formData.type === 'command') && !formData.content?.trim()) {
+      newErrors.content = 'Content is required for notes and commands'
     }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const isValidUrl = (url: string) => {
+  const isValidUrl = (string: string) => {
     try {
-      new URL(url)
+      new URL(string)
       return true
-    } catch (e) {
+    } catch (_) {
       return false
     }
   }
@@ -222,25 +222,36 @@ export default function ResourceForm({
     }
     
     setIsSubmitting(true)
+    setErrors({})
     
     try {
-      // Make API call to our backend
-      const response = await fetch('/api/resources', {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const endpoint = isEditing 
+        ? `/api/resources?id=${initialData.id}` 
+        : '/api/resources'
+      
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
       
       if (!response.ok) {
-        throw new Error('Failed to save resource');
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save resource')
       }
       
-      // Redirect to resources page after submit
+      // Redirect to resources page after successful submission
       router.push('/resources')
-      
+      router.refresh()
     } catch (error) {
-      console.error('Error submitting resource:', error)
-      setErrors({ form: 'Failed to save resource. Please try again.' })
+      console.error('Error saving resource:', error)
+      setErrors({
+        form: error instanceof Error ? error.message : 'Failed to save resource. Please try again.'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -275,6 +286,7 @@ export default function ResourceForm({
             <option value="link">Link</option>
             <option value="video">YouTube Video</option>
             <option value="document">Document</option>
+            <option value="command">Command</option>
           </select>
         </div>
         
