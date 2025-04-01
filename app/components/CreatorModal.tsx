@@ -54,7 +54,7 @@ export default function CreatorModal({ isOpen, onClose }: CreatorModalProps) {
           {/* Social Links */}
           <div className="flex space-x-4">
             <a
-              href="https://github.com/aditya0545"
+              href="https://github.com/Aditya0545"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
@@ -64,7 +64,7 @@ export default function CreatorModal({ isOpen, onClose }: CreatorModalProps) {
               </svg>
             </a>
             <a
-              href="https://linkedin.com/in/aditya0545"
+              href="https://www.linkedin.com/in/aditya0545/"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
