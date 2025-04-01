@@ -376,21 +376,43 @@ export default function ResourceForm({
           {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
         </div>
         
-        {/* Content for notes */}
-        {formData.type === 'note' && (
+        {/* Content for notes and commands */}
+        {(formData.type === 'note' || formData.type === 'command') && (
           <div>
             <label htmlFor="content" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-200">
-              Content <span className="text-red-500">*</span>
+              {formData.type === 'command' ? 'Command' : 'Content'} <span className="text-red-500">*</span>
             </label>
-            <textarea
-              id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleChange}
-              rows={10}
-              className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-              placeholder="Write your notes here (Markdown supported)"
-            />
+            {formData.type === 'command' ? (
+              <div className="space-y-4">
+                <textarea
+                  id="content"
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  rows={3}
+                  className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 font-mono text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                  placeholder="Enter your command(s) here. For multiple commands, put each on a new line."
+                />
+                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                  <h4 className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-200">Tips:</h4>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                    <li>Use one line per command</li>
+                    <li>Include any necessary flags or arguments</li>
+                    <li>Add comments using # to explain complex commands</li>
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <textarea
+                id="content"
+                name="content"
+                value={formData.content}
+                onChange={handleChange}
+                rows={10}
+                className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                placeholder="Write your notes here (Markdown supported)"
+              />
+            )}
             {errors.content && <p className="mt-1 text-sm text-red-500">{errors.content}</p>}
           </div>
         )}

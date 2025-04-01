@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
@@ -60,9 +60,18 @@ export default function ResourcesPage() {
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedTag, setSelectedTag] = useState<string>('')
   
-  // Get all unique tags from resources
-  const allTags = resources.flatMap(r => r.tags).filter(Boolean)
-  const tags = Array.from(new Set(allTags)).sort()
+  // Get all unique tags from resources and sort them
+  const tags = useMemo(() => {
+    const allTags = resources.flatMap(r => r.tags).filter(Boolean)
+    return Array.from(new Set(allTags)).sort((a, b) => a.localeCompare(b))
+  }, [resources])
+
+  // Reset selected tag if it no longer exists in the resources
+  useEffect(() => {
+    if (selectedTag && !tags.includes(selectedTag)) {
+      setSelectedTag('')
+    }
+  }, [tags, selectedTag])
   
   // Load resources
   useEffect(() => {
