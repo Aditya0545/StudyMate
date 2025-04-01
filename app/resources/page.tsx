@@ -8,6 +8,18 @@ import ResourceCard from '@/app/components/ResourceCard'
 
 type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
+// Predefined categories
+const CATEGORIES = [
+  'Machine Learning',
+  'Web Development',
+  'Java',
+  'Software Engineering',
+  'GDG',
+  'Computer Networks',
+  'Compiler Design',
+  'Other'
+] as const;
+
 interface Resource {
   _id: string
   title: string
@@ -48,8 +60,7 @@ export default function ResourcesPage() {
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedTag, setSelectedTag] = useState<string>('')
   
-  // Get all unique categories and tags from resources
-  const categories = Array.from(new Set(resources.map(r => r.category))).filter(Boolean).sort()
+  // Get all unique tags from resources
   const allTags = resources.flatMap(r => r.tags).filter(Boolean)
   const tags = Array.from(new Set(allTags)).sort()
   
@@ -324,7 +335,7 @@ export default function ResourcesPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Categories</option>
-              {categories.map((category) => (
+              {CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
