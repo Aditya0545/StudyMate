@@ -61,6 +61,7 @@ export default function ResourceForm({
   const [isLoadingVideoData, setIsLoadingVideoData] = useState(false)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
   const [showVideoPreview, setShowVideoPreview] = useState(false)
+  const [error, setError] = useState('')
   
   // Updated categories
   const categories = [
@@ -122,6 +123,8 @@ export default function ResourceForm({
     if (!url || formData.type !== 'video') return
     
     setIsLoadingVideoData(true)
+    setError('')
+    
     try {
       const videoData = await getVideoMetadata(url)
       
@@ -140,10 +143,12 @@ export default function ResourceForm({
             description: videoData.description
           }))
         }
+      } else {
+        setError('Could not fetch video metadata. Please check the URL and try again.')
       }
     } catch (error) {
       console.error('Error fetching video metadata:', error)
-      // Don't show an error message to the user - just continue without metadata
+      setError('Failed to fetch video details. Please try again.')
     } finally {
       setIsLoadingVideoData(false)
     }
