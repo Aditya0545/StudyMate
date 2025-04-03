@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Logo from './Logo'
 import CreatorModal from './CreatorModal'
@@ -8,6 +8,23 @@ import ThemeSelect from './ThemeSelect'
 
 export default function Header() {
   const [isCreatorModalOpen, setIsCreatorModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/check-admin');
+        const data = await response.json();
+        setIsAdmin(data.isAdmin);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
 
   return (
     <>
@@ -27,9 +44,11 @@ export default function Header() {
               >
                 Creator's Corner
               </button>
-              <Link href="/resources/new" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                Add New
-              </Link>
+              {isAdmin && (
+                <Link href="/resources/new" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                  Add New
+                </Link>
+              )}
             </nav>
           </div>
           <ThemeSelect />
@@ -58,12 +77,14 @@ export default function Header() {
               </svg>
               <span className="ml-1">Creator</span>
             </button>
-            <Link href="/resources/new" className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="ml-1">Add</span>
-            </Link>
+            {isAdmin && (
+              <Link href="/resources/new" className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="ml-1">Add</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
