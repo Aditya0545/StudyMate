@@ -53,6 +53,8 @@ export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -289,29 +291,62 @@ export default function ResourcesPage() {
     }
   };
 
+  // Check admin and auth status
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        console.log('Checking admin status...');
+        const response = await fetch('/api/auth/check-admin');
+        const data = await response.json();
+        console.log('Admin check response:', data);
+        setIsAdmin(data.isAdmin);
+        setIsAuthenticated(data.isAuthenticated);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+        setIsAuthenticated(false);
+      }
+    };
+    
+    checkStatus();
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resources</h1>
         <div className="flex gap-4">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-            Logout
-          </button>
+          {!isAuthenticated ? (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              </svg>
+              Admin Access
+            </Link>
+          ) : (
+            <>
+              {isAdmin && (
+                <Link
+                  href="/resources/new"
+                  className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                >
+                  <PlusIcon className="mr-2 h-5 w-5" />
+                  Add New
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                Logout
+              </button>
+            </>
+          )}
         </div>
-      </div>
-      
-      <div className="mb-6 flex items-center justify-between">
-        <Link
-          href="/resources/new"
-          className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          <PlusIcon className="mr-2 h-5 w-5" />
-          Add New
-        </Link>
       </div>
       
       {/* Filters */}
@@ -441,25 +476,40 @@ export default function ResourcesPage() {
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             {searchTerm || selectedCategory || selectedType || selectedTag
               ? "No resources match your current filters. Try changing or clearing your filters."
-              : "Get started by creating your first resource."}
+              : isAdmin ? "Get started by creating your first resource." : "No resources available yet."}
           </p>
-          <div className="mt-6">
-            <Link 
-              href="/resources/new" 
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              <PlusIcon className="mr-2 h-5 w-5" />
-              Add Resource
-            </Link>
-          </div>
+          {!isAuthenticated ? (
+            <div className="mt-6">
+              <Link
+                href="/login"
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+                Admin Access
+              </Link>
+            </div>
+          ) : isAdmin && (
+            <div className="mt-6">
+              <Link 
+                href="/resources/new" 
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                <PlusIcon className="mr-2 h-5 w-5" />
+                Add Resource
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {resources.map((resource) => (
             <ResourceCard 
               key={resource._id} 
-              resource={resource} 
-              onDelete={() => handleDeleteResource(resource._id)}
+              resource={resource}
+              isAdmin={isAdmin}
+              onDelete={handleDeleteResource}
             />
           ))}
         </div>
