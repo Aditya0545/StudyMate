@@ -313,7 +313,7 @@ export default function ResourcesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resources</h1>
         <div className="flex gap-4">
           {!isAuthenticated ? (
