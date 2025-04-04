@@ -44,11 +44,6 @@ export default function Header() {
               >
                 Creator's Corner
               </button>
-              {isAdmin && (
-                <Link href="/resources/new" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                  Add New
-                </Link>
-              )}
             </nav>
           </div>
           <ThemeSelect />
@@ -77,14 +72,6 @@ export default function Header() {
               </svg>
               <span className="ml-1">Creator</span>
             </button>
-            {isAdmin && (
-              <Link href="/resources/new" className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="ml-1">Add</span>
-              </Link>
-            )}
           </div>
         </div>
       </header>
