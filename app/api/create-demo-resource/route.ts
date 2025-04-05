@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/app/lib/mongodb';
+import { connectToDatabase } from '@/app/lib/mongodb';
 
 export async function GET() {
   try {
     console.log('Connecting to MongoDB to create demo resource...');
-    const client = await clientPromise;
-    const db = client.db('studymate');
+    const db = await connectToDatabase();
     
     // Check if resources collection exists
     const collections = await db.listCollections().toArray();

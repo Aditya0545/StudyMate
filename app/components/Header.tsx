@@ -14,12 +14,29 @@ export default function Header() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const response = await fetch('/api/auth/check-admin');
+        // Get admin password from localStorage
+        const adminPassword = localStorage.getItem('admin-password');
+        if (!adminPassword) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const response = await fetch('/api/auth/check-admin', {
+          headers: {
+            'X-Admin-Password': adminPassword
+          }
+        });
+        
         const data = await response.json();
         setIsAdmin(data.isAdmin);
+        
+        if (!data.isAdmin) {
+          localStorage.removeItem('admin-password');
+        }
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
+        localStorage.removeItem('admin-password');
       }
     };
     

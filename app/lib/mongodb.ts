@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion, Db } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
   console.error('MongoDB URI is missing. Please add it to environment variables.');
@@ -42,4 +42,10 @@ if (process.env.NODE_ENV === 'development') {
 
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
-export default clientPromise; 
+export default clientPromise;
+
+// Helper function to connect to database and return Db instance
+export async function connectToDatabase(): Promise<Db> {
+  const client = await clientPromise;
+  return client.db('studymate');
+} 

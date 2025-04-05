@@ -9,7 +9,7 @@ type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
 interface ResourceFormProps {
   initialData?: {
-    id?: string
+    _id?: string
     title: string
     description: string
     type: ResourceType
@@ -220,47 +220,68 @@ export default function ResourceForm({
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!validateForm()) {
-      return
+      return;
     }
     
-    setIsSubmitting(true)
-    setErrors({})
+    setIsSubmitting(true);
+    setErrors({});
     
     try {
+      // Get admin password from localStorage
+      const adminPassword = localStorage.getItem('admin-password');
+      if (!adminPassword) {
+        setErrors({ form: 'Admin authentication required. Please log in again.' });
+        router.push('/login');
+        return;
+      }
+
       const endpoint = isEditing 
-        ? `/api/resources?id=${initialData.id}` 
-        : '/api/resources'
+        ? `/api/resources?id=${initialData._id}` 
+        : '/api/resources';
       
-      const method = isEditing ? 'PUT' : 'POST'
-      
+      const method = isEditing ? 'PUT' : 'POST';
+
+      // Remove _id from the data being sent
+      const { _id, ...dataToSend } = formData;
+
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'X-Admin-Password': adminPassword
         },
-        body: JSON.stringify(formData),
-      })
-      
+        body: JSON.stringify(dataToSend)
+      });
+
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to save resource')
+        const data = await response.json();
+        
+        if (response.status === 401) {
+          // Clear stored password and redirect to login
+          localStorage.removeItem('admin-password');
+          setErrors({ form: 'Admin session expired. Please log in again.' });
+          router.push('/login');
+          return;
+        }
+        
+        throw new Error(data.error || `Failed to ${isEditing ? 'update' : 'save'} resource`);
       }
-      
-      // Redirect to resources page after successful submission
-      router.push('/resources')
-      router.refresh()
+
+      // Success - redirect to resources page
+      router.push('/resources');
+      router.refresh();
     } catch (error) {
-      console.error('Error saving resource:', error)
+      console.error('Error saving resource:', error);
       setErrors({
-        form: error instanceof Error ? error.message : 'Failed to save resource. Please try again.'
-      })
+        form: error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'save'} resource. Please try again.`
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="rounded-xl bg-white p-6 shadow-md dark:bg-gray-800">
