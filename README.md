@@ -1,3 +1,8 @@
+# ⚠️ WARNING: This code is protected by copyright.
+
+No permission is granted to use, copy, fork, modify, or distribute this code for any purpose without written permission from the author.
+Unauthorized use may result in legal action.
+
 # StudyMate
 
 StudyMate is a comprehensive study resource management application built with Next.js, MongoDB, and Tailwind CSS. It allows users to organize study materials, add different types of resources, and manage a collection of study content.
