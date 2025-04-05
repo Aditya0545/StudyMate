@@ -1,4 +1,4 @@
-Copyright (c) 2025 [Your Name]
+Copyright (c) 2025 Aditya Kumar
 
 This project is licensed under All Rights Reserved.
 
