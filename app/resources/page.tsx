@@ -54,7 +54,6 @@ export default function ResourcesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -75,172 +74,24 @@ export default function ResourcesPage() {
     }
   }, [tags, selectedTag])
   
-  // Load resources
+  // Fetch resources
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        setLoading(true)
-        setError(null)
-        
-        // First, check environment variables
-        console.log('Checking environment variables...')
-        try {
-          const envCheckResponse = await fetch('/api/env-check')
-          const envData = await envCheckResponse.json()
-          console.log('Environment check:', envData)
-          
-          // If MongoDB URI doesn't exist in production, show a helpful error
-          if (!envData.mongodb_uri_exists && envData.node_env === 'production') {
-            throw new Error('MongoDB URI is not set in Vercel environment variables')
-          }
-        } catch (envError) {
-          console.error('Environment check error:', envError)
-        }
-        
-        // Build query parameters
-        const params = new URLSearchParams()
-        if (selectedCategory) params.append('category', selectedCategory)
-        if (selectedType) params.append('type', selectedType)
-        if (selectedTag) params.append('tag', selectedTag)
-        if (searchTerm) params.append('search', searchTerm)
-        
-        const queryString = params.toString() ? `?${params.toString()}` : ''
-        const url = `/api/resources${queryString}`
-        
-        console.log('Fetching resources:', { 
-          url, 
-          params: {
-            category: selectedCategory,
-            type: selectedType,
-            tag: selectedTag,
-            search: searchTerm
-          },
-          timestamp: new Date().toISOString() 
-        })
-        
-        // Try fetching debug info first if there's a problem
-        let shouldTryDebug = false
-        
-        // Use fetch with explicit options
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store',
-            'Pragma': 'no-cache'
-          },
+        const response = await fetch('/api/resources', {
           cache: 'no-store',
-          next: { revalidate: 0 }
-        })
+          headers: { 'Cache-Control': 'no-cache, no-store' }
+        });
         
         if (!response.ok) {
-          shouldTryDebug = true
-          const errorText = await response.text().catch(() => 'Unknown error')
-          console.error('API Error Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            data: errorText
-          })
-          
-          // If no resources found, try to create a demo resource
-          if (!selectedCategory && !selectedType && !selectedTag && !searchTerm) {
-            console.log('Trying to create a demo resource...')
-            try {
-              const demoResponse = await fetch('/api/create-demo-resource')
-              const demoData = await demoResponse.json()
-              console.log('Demo resource creation result:', demoData)
-              
-              if (demoData.success) {
-                // Retry fetching resources after creating demo resource
-                console.log('Retrying resource fetch after demo creation...')
-                const retryResponse = await fetch('/api/resources', {
-                  cache: 'no-store',
-                  headers: { 'Cache-Control': 'no-cache, no-store' }
-                })
-                
-                if (retryResponse.ok) {
-                  const retryData = await retryResponse.json()
-                  console.log(`Loaded ${retryData.length} resources after demo creation`)
-                  setResources(retryData)
-                  return // Exit function if successful
-                }
-              }
-            } catch (demoError) {
-              console.error('Error creating demo resource:', demoError)
-            }
-          }
-          
           throw new Error(`API error: ${response.status} ${response.statusText}`)
         }
         
-        // Parse JSON response
-        let data
-        try {
-          data = await response.json()
-          console.log(`Loaded ${data.length} resources`, { 
-            timestamp: new Date().toISOString(),
-            sampleId: data.length > 0 ? data[0]._id : 'none' 
-          })
-          setResources(data)
-        } catch (jsonError) {
-          shouldTryDebug = true
-          console.error('Error parsing JSON response:', jsonError)
-          throw new Error('Failed to parse API response')
-        }
-        
-        // If no resources found and no filters applied, try to create a demo resource
-        if (data.length === 0 && !selectedCategory && !selectedType && !selectedTag && !searchTerm) {
-          console.log('No resources found, trying to create a demo resource...')
-          try {
-            const demoResponse = await fetch('/api/create-demo-resource')
-            const demoData = await demoResponse.json()
-            console.log('Demo resource creation result:', demoData)
-            
-            if (demoData.success) {
-              // Retry fetching resources after creating demo resource
-              console.log('Retrying resource fetch after demo creation...')
-              const retryResponse = await fetch('/api/resources', {
-                cache: 'no-store',
-                headers: { 'Cache-Control': 'no-cache, no-store' }
-              })
-              
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json()
-                console.log(`Loaded ${retryData.length} resources after demo creation`)
-                setResources(retryData)
-              }
-            }
-          } catch (demoError) {
-            console.error('Error creating demo resource:', demoError)
-          }
-        }
-        
-        // If anything went wrong, fetch debug info
-        if (shouldTryDebug) {
-          try {
-            console.log('Fetching debug info due to error')
-            await fetch('/api/debug-resources')
-              .then(res => res.json())
-              .then(debug => console.log('Debug info:', debug))
-              .catch(err => console.error('Failed to fetch debug info:', err))
-          } catch (debugError) {
-            console.error('Error fetching debug info:', debugError)
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching resources:', err)
-        setError(`Failed to load resources. Please check the console for details or try again later.`)
-        
-        // Try to get additional debug information
-        try {
-          console.log('Fetching debug info due to catch block')
-          await fetch('/api/debug-resources')
-            .then(res => res.json())
-            .then(debug => console.log('Debug info:', debug))
-            .catch(err => console.error('Failed to fetch debug info:', err))
-        } catch (debugError) {
-          console.error('Error fetching debug info:', debugError)
-        }
+        const data = await response.json()
+        setResources(data)
+      } catch (error) {
+        console.error('Error fetching resources:', error)
+        setError('Failed to load resources. Please try again later.')
       } finally {
         setLoading(false)
       }
@@ -249,28 +100,70 @@ export default function ResourcesPage() {
     fetchResources()
   }, [searchTerm, selectedCategory, selectedType, selectedTag])
   
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        // Get admin password from localStorage
+        const adminPassword = localStorage.getItem('admin-password');
+        if (!adminPassword) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const response = await fetch('/api/auth/check-admin', {
+          headers: {
+            'X-Admin-Password': adminPassword
+          }
+        });
+        
+        const data = await response.json();
+        setIsAdmin(data.isAdmin);
+        
+        if (!data.isAdmin) {
+          localStorage.removeItem('admin-password');
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+        localStorage.removeItem('admin-password');
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
+
   // Handle resource deletion
   const handleDeleteResource = async (resourceId: string) => {
     try {
+      const adminPassword = localStorage.getItem('admin-password');
+      if (!adminPassword) {
+        router.push('/login');
+        return;
+      }
+
       const response = await fetch(`/api/resources?id=${resourceId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Admin-Password': adminPassword
         }
-      })
+      });
       
       if (response.ok) {
-        // Remove the deleted resource from the state
         setResources(prevResources => 
           prevResources.filter(resource => resource._id !== resourceId)
-        )
+        );
+      } else if (response.status === 401) {
+        localStorage.removeItem('admin-password');
+        router.push('/login');
       } else {
-        console.error('Failed to delete resource')
+        console.error('Failed to delete resource');
       }
     } catch (error) {
-      console.error('Error deleting resource:', error)
+      console.error('Error deleting resource:', error);
     }
-  }
+  };
   
   // Reset filters
   const handleResetFilters = () => {
@@ -280,43 +173,34 @@ export default function ResourcesPage() {
     setSelectedTag('')
   }
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('admin-password');
+    setIsAdmin(false);
+    router.refresh();
   };
 
-  // Check admin and auth status
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        console.log('Checking admin status...');
-        const response = await fetch('/api/auth/check-admin');
-        const data = await response.json();
-        console.log('Admin check response:', data);
-        setIsAdmin(data.isAdmin);
-        setIsAuthenticated(data.isAuthenticated);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-        setIsAuthenticated(false);
-      }
-    };
-    
-    checkStatus();
-  }, []);
+  // Filter resources
+  const filteredResources = useMemo(() => {
+    return resources.filter(resource => {
+      const matchesSearch = searchTerm === '' || 
+        resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      
+      const matchesCategory = selectedCategory === '' || resource.category === selectedCategory
+      const matchesType = selectedType === '' || resource.type === selectedType
+      const matchesTag = selectedTag === '' || resource.tags.includes(selectedTag)
+      
+      return matchesSearch && matchesCategory && matchesType && matchesTag
+    })
+  }, [resources, searchTerm, selectedCategory, selectedType, selectedTag])
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resources</h1>
         <div className="flex gap-4">
-          {!isAuthenticated ? (
+          {!isAdmin ? (
             <Link
               href="/login"
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -324,19 +208,17 @@ export default function ResourcesPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>
-              Admin Access
+              Admin Login
             </Link>
           ) : (
             <>
-              {isAdmin && (
-                <Link
-                  href="/resources/new"
-                  className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
-                  <PlusIcon className="mr-2 h-5 w-5" />
-                  Add New
-                </Link>
-              )}
+              <Link
+                href="/resources/new"
+                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              >
+                <PlusIcon className="mr-2 h-5 w-5" />
+                Add New
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -457,17 +339,11 @@ export default function ResourcesPage() {
               <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
               <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                 <p>{error}</p>
-                <p className="mt-2">
-                  Please verify your database connection in the{" "}
-                  <Link href="/db-test" className="font-medium underline">
-                    database test page
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
         </div>
-      ) : resources.length === 0 ? (
+      ) : filteredResources.length === 0 ? (
         <div className="mt-8 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
             <FolderIcon className="h-16 w-16 text-gray-400" />
@@ -478,19 +354,7 @@ export default function ResourcesPage() {
               ? "No resources match your current filters. Try changing or clearing your filters."
               : isAdmin ? "Get started by creating your first resource." : "No resources available yet."}
           </p>
-          {!isAuthenticated ? (
-            <div className="mt-6">
-              <Link
-                href="/login"
-                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-                Admin Access
-              </Link>
-            </div>
-          ) : isAdmin && (
+          {isAdmin && (
             <div className="mt-6">
               <Link 
                 href="/resources/new" 
@@ -504,7 +368,7 @@ export default function ResourcesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {resources.map((resource) => (
+          {filteredResources.map((resource) => (
             <ResourceCard 
               key={resource._id} 
               resource={resource}

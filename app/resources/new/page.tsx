@@ -1,7 +1,57 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import ResourceForm from '@/app/components/ResourceForm'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function NewResourcePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Get admin password from localStorage
+        const adminPassword = localStorage.getItem('admin-password')
+        if (!adminPassword) {
+          router.push('/login')
+          return
+        }
+
+        const response = await fetch('/api/auth/check-admin', {
+          headers: {
+            'X-Admin-Password': adminPassword
+          }
+        })
+        const data = await response.json()
+        
+        if (!data.isAdmin) {
+          // Clear invalid password and redirect to login
+          localStorage.removeItem('admin-password')
+          router.push('/login')
+          return
+        }
+
+        setLoading(false)
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        localStorage.removeItem('admin-password')
+        router.push('/login')
+      }
+    }
+    
+    checkAuth()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="container mx-auto flex min-h-[300px] items-center justify-center px-4">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">

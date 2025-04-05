@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import YoutubePreview from './YoutubePreview'
 import { extractVideoId } from '@/app/lib/youtube'
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 // List of tag colors for variety
 const TAG_COLORS = [
@@ -49,14 +50,14 @@ interface ResourceCardProps {
     }
     urlMetadata?: UrlMetadata
   }
+  isAdmin: boolean
   onDelete?: (id: string) => void
-  isAdmin?: boolean
 }
 
-export default function ResourceCard({ resource, onDelete, isAdmin }: ResourceCardProps) {
+export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -66,13 +67,49 @@ export default function ResourceCard({ resource, onDelete, isAdmin }: ResourceCa
         setDropdownOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [dropdownRef])
 
-  // Function to get type icon
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Get resource type label
+  const getResourceTypeLabel = () => {
+    switch (resource.type) {
+      case 'note':
+        return 'Note'
+      case 'link':
+        return 'Link'
+      case 'video':
+        return 'Video'
+      case 'document':
+        return 'Document'
+      case 'command':
+        return 'Command'
+      default:
+        return 'Unknown'
+    }
+  }
+
+  // Get tag color
+  const getTagColor = (tag: string) => {
+    const colors = [
+      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300'
+    ]
+    
+    // Use a hash function to consistently assign colors to tags
+    const hash = tag.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc)
+    }, 0)
+    
+    return colors[Math.abs(hash) % colors.length]
+  }
+
+  // Get type icon
   const getTypeIcon = () => {
     switch (resource.type) {
       case 'note':
@@ -159,33 +196,6 @@ export default function ResourceCard({ resource, onDelete, isAdmin }: ResourceCa
     return resource.url.length > 40 ? `${resource.url.substring(0, 40)}...` : resource.url;
   }
 
-  // Get resource type label
-  const getResourceTypeLabel = () => {
-    // Override type label for Google services
-    if (resource.urlMetadata) {
-      if (resource.urlMetadata.type === 'gdocs') return 'Google Docs';
-      if (resource.urlMetadata.type === 'gsheets') return 'Google Sheets';
-      if (resource.urlMetadata.type === 'gslides') return 'Google Slides';
-      if (resource.urlMetadata.type === 'gdrive') return 'Google Drive';
-      if (resource.urlMetadata.type === 'youtube') return 'YouTube';
-    }
-    
-    // Default to resource type
-    return resource.type.charAt(0).toUpperCase() + resource.type.slice(1);
-  }
-  
-  // Get tag color based on tag string
-  const getTagColor = (tag: string) => {
-    // Use hash code of the tag string to consistently get the same color for the same tag
-    const hashCode = tag.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc);
-    }, 0);
-    
-    // Use positive modulo to get an index in the TAG_COLORS array
-    const index = Math.abs(hashCode % TAG_COLORS.length);
-    return TAG_COLORS[index];
-  }
-
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800 dark:shadow-gray-900/30">
       {/* Card Header */}
@@ -245,7 +255,7 @@ export default function ResourceCard({ resource, onDelete, isAdmin }: ResourceCa
                       Edit
                     </Link>
                     <button
-                      onClick={() => { setShowConfirmDelete(true); setDropdownOpen(false); }}
+                      onClick={() => setShowConfirmDelete(true)}
                       className="flex w-full items-center px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-600"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -328,18 +338,8 @@ export default function ResourceCard({ resource, onDelete, isAdmin }: ResourceCa
 
         {/* Command Content (only show when expanded) */}
         {resource.type === 'command' && resource.content && expanded && (
-          <div className="mt-3 space-y-4">
-            <div className="overflow-hidden rounded-md bg-gray-900 text-sm dark:bg-gray-800">
-              {/* Terminal Header */}
-              <div className="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-2 dark:bg-gray-700">
-                <div className="flex space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="text-xs text-gray-400">Terminal</span>
-              </div>
-              {/* Commands */}
+          <div className="mt-3">
+            <div className="rounded-t-lg bg-gray-900 text-white">
               <div className="p-4">
                 {resource.content.split('\n').map((line, index) => (
                   line.trim() && (

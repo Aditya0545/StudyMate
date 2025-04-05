@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { isAdmin } from './app/config/admins';
 
 // List of paths that require admin access
 const ADMIN_PATHS = [
@@ -31,28 +30,16 @@ export async function middleware(request: NextRequest) {
   
   // For non-GET requests to /api/resources, require admin access
   if (path.startsWith('/api/resources') && method !== 'GET') {
-    const authCookie = request.cookies.get('resources-auth');
-    const adminEmail = request.cookies.get('admin-email');
+    const adminPassword = request.headers.get('X-Admin-Password');
     
-    if (!authCookie || !adminEmail || !isAdmin(adminEmail.value)) {
+    if (!adminPassword || adminPassword !== process.env.RESOURCES_PASSWORD) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
   
-  // For protected paths (new, edit, delete), require admin access
+  // For protected paths (new, edit, delete), allow access and let the client-side handle auth
   if (isProtectedPath) {
-    const authCookie = request.cookies.get('resources-auth');
-    const adminEmail = request.cookies.get('admin-email');
-    
-    if (!authCookie || !adminEmail) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    
-    // Check if the user is an admin
-    if (!isAdmin(adminEmail.value)) {
-      // Redirect non-admins to the resources page with read-only access
-      return NextResponse.redirect(new URL('/resources', request.url));
-    }
+    return NextResponse.next();
   }
   
   return NextResponse.next();
