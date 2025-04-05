@@ -1,0 +1,5 @@
+Copyright (c) 2025 [Your Name]
+
+This project is licensed under All Rights Reserved.
+
+You may not copy, reproduce, distribute, modify, or create derivative works from this project without written permission from the author.
