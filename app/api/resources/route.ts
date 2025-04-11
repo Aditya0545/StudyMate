@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/app/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import { getVideoMetadata } from '@/app/lib/youtube';
 import { ObjectId } from 'mongodb';
 
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
-    const db = await connectToDatabase();
+    const { db } = await connectToDatabase();
     const collection = db.collection('resources');
     
     if (id) {
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error in GET /api/resources:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch resources' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch resources' },
       { status: 500 }
     );
   }
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = await connectToDatabase();
+    const { db } = await connectToDatabase();
     const collection = db.collection('resources');
     
     const resourceToInsert = {
@@ -113,12 +113,15 @@ export async function PUT(request: Request) {
     }
     
     const data = await request.json();
-    const db = await connectToDatabase();
+    const { db } = await connectToDatabase();
     const collection = db.collection('resources');
+    
+    // Remove _id from update data if present
+    const { _id, ...updateData } = data;
     
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
-      { $set: { ...data, updatedAt: new Date().toISOString() } },
+      { $set: { ...updateData, updatedAt: new Date().toISOString() } },
       { returnDocument: 'after' }
     );
     
@@ -131,7 +134,7 @@ export async function PUT(request: Request) {
     
     return NextResponse.json({
       success: true,
-      ...result
+      resource: result
     });
   } catch (error) {
     console.error('Error in PUT /api/resources:', error);
@@ -162,7 +165,7 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const db = await connectToDatabase();
+    const { db } = await connectToDatabase();
     const collection = db.collection('resources');
     
     const result = await collection.deleteOne({ _id: new ObjectId(id) });

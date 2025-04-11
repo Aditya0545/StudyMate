@@ -27,6 +27,7 @@ interface ResourceFormProps {
     }
   }
   isEditing?: boolean
+  lockerId?: string
 }
 
 // List of tag colors for variety (same as in ResourceCard)
@@ -41,27 +42,53 @@ const TAG_COLORS = [
   'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
 ]
 
-export default function ResourceForm({ 
-  initialData = { 
-    title: '', 
-    description: '', 
-    type: 'note' as ResourceType, 
-    url: '', 
-    content: '',
-    tags: [],
-    category: ''
-  }, 
-  isEditing = false 
-}: ResourceFormProps) {
+interface FormData {
+  _id?: string
+  title: string
+  description: string
+  type: 'note' | 'link' | 'video' | 'document' | 'command'
+  url?: string
+  content?: string
+  tags: string[]
+  category: string
+  videoMetadata?: {
+    id: string
+    title: string
+    description: string
+    thumbnail: string
+    channelTitle: string
+    publishedAt: string
+  }
+}
+
+export default function ResourceForm({
+  initialData,
+  isEditing = false,
+  lockerId,
+}: {
+  initialData?: FormData
+  isEditing?: boolean
+  lockerId?: string
+}) {
   const router = useRouter()
-  const [formData, setFormData] = useState(initialData)
+  const [formData, setFormData] = useState<FormData>(() => ({
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    type: initialData?.type || 'note',
+    url: initialData?.url || '',
+    content: initialData?.content || '',
+    tags: initialData?.tags || [],
+    category: initialData?.category || '',
+    videoMetadata: initialData?.videoMetadata,
+    _id: initialData?._id
+  }))
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [isLoadingVideoData, setIsLoadingVideoData] = useState(false)
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
-  const [showVideoPreview, setShowVideoPreview] = useState(false)
-  const [error, setError] = useState('')
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(initialData?.url || '')
+  const [showVideoPreview, setShowVideoPreview] = useState(!!initialData?.url && initialData?.type === 'video')
+  const [error, setError] = useState<string | null>(null)
   
   // Updated categories
   const categories = [
@@ -75,6 +102,18 @@ export default function ResourceForm({
     'Other'
   ]
 
+  // Effect to handle initial video preview
+  useEffect(() => {
+    if (initialData?.type === 'video' && initialData?.url) {
+      setVideoPreviewUrl(initialData.url)
+      setShowVideoPreview(true)
+      setFormData(prev => ({
+        ...prev,
+        videoMetadata: initialData.videoMetadata
+      }))
+    }
+  }, [initialData])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     
@@ -82,15 +121,10 @@ export default function ResourceForm({
     if (name === 'type' && value !== formData.type) {
       const resetData = {
         ...formData,
-        [name]: value as ResourceType
-      }
-      
-      if (value !== 'link' && value !== 'video') {
-        resetData.url = ''
-      }
-      
-      if (value !== 'note' && value !== 'command') {
-        resetData.content = ''
+        [name]: value as ResourceType,
+        url: '',
+        content: '',
+        videoMetadata: undefined
       }
       
       // Reset video preview when changing away from video type
@@ -101,20 +135,23 @@ export default function ResourceForm({
       
       setFormData(resetData)
     } else {
-      setFormData({
+      const newFormData = {
         ...formData,
         [name]: value
-      })
+      }
       
       // Handle URL changes for YouTube videos
       if (name === 'url' && formData.type === 'video') {
-        // Debounce video preview if needed
         setVideoPreviewUrl(value)
         setShowVideoPreview(!!value)
         
-        // Fetch video metadata when URL changes
-        handleFetchVideoMetadata(value)
+        // Only fetch new metadata if URL has changed from initial
+        if (value !== initialData?.url) {
+          handleFetchVideoMetadata(value)
+        }
       }
+      
+      setFormData(newFormData)
     }
   }
   
@@ -123,26 +160,22 @@ export default function ResourceForm({
     if (!url || formData.type !== 'video') return
     
     setIsLoadingVideoData(true)
-    setError('')
+    setError(null)
     
     try {
       const videoData = await getVideoMetadata(url)
       
       if (videoData) {
         // Auto-fill title and description if they're empty
-        if (!formData.title || formData.title === initialData.title) {
-          setFormData(prev => ({
-            ...prev,
-            title: videoData.title
-          }))
-        }
+        const shouldUpdateTitle = !formData.title || (initialData && formData.title === initialData.title)
+        const shouldUpdateDescription = !formData.description || (initialData && formData.description === initialData.description)
         
-        if (!formData.description || formData.description === initialData.description) {
-          setFormData(prev => ({
-            ...prev,
-            description: videoData.description
-          }))
-        }
+        setFormData(prev => ({
+          ...prev,
+          ...(shouldUpdateTitle ? { title: videoData.title } : {}),
+          ...(shouldUpdateDescription ? { description: videoData.description } : {}),
+          videoMetadata: videoData
+        }))
       } else {
         setError('Could not fetch video metadata. Please check the URL and try again.')
       }
@@ -196,18 +229,19 @@ export default function ResourceForm({
     
     if (formData.type === 'link' || formData.type === 'video') {
       if (!formData.url) {
-        newErrors.url = 'URL is required for links and videos'
+        newErrors.url = 'URL is required'
       } else if (!isValidUrl(formData.url)) {
         newErrors.url = 'Please enter a valid URL'
       }
     }
     
-    if ((formData.type === 'note' || formData.type === 'command') && !formData.content?.trim()) {
-      newErrors.content = 'Content is required for notes and commands'
+    if (formData.type === 'note' || formData.type === 'command') {
+      if (!formData.content) {
+        newErrors.content = 'Content is required'
+      }
     }
     
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return newErrors
   }
 
   const isValidUrl = (string: string) => {
@@ -220,68 +254,77 @@ export default function ResourceForm({
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     
-    if (!validateForm()) {
-      return;
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setErrors(errors)
+      return
     }
     
-    setIsSubmitting(true);
-    setErrors({});
+    setIsSubmitting(true)
+    setError(null)
     
     try {
-      // Get admin password from localStorage
-      const adminPassword = localStorage.getItem('admin-password');
-      if (!adminPassword) {
-        setErrors({ form: 'Admin authentication required. Please log in again.' });
-        router.push('/login');
-        return;
-      }
-
-      const endpoint = isEditing 
-        ? `/api/resources?id=${initialData._id}` 
-        : '/api/resources';
+      const endpoint = lockerId 
+        ? `/api/private-resources${isEditing && initialData?._id ? `?id=${initialData._id}&lockerId=${lockerId}` : `?lockerId=${lockerId}`}`
+        : `/api/resources${isEditing && initialData?._id ? `?id=${initialData._id}` : ''}`
       
-      const method = isEditing ? 'PUT' : 'POST';
-
-      // Remove _id from the data being sent
-      const { _id, ...dataToSend } = formData;
+      const password = lockerId 
+        ? localStorage.getItem(`locker-${lockerId}`)
+        : localStorage.getItem('admin-password')
+      
+      if (!password) {
+        if (lockerId) {
+          router.push('/private-resources')
+        } else {
+          router.push('/login')
+        }
+        return
+      }
 
       const response = await fetch(endpoint, {
-        method,
+        method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Admin-Password': adminPassword
+          ...(lockerId 
+            ? { 'X-Locker-Password': password }
+            : { 'X-Admin-Password': password }
+          )
         },
-        body: JSON.stringify(dataToSend)
-      });
+        body: JSON.stringify(formData)
+      })
 
       if (!response.ok) {
-        const data = await response.json();
-        
+        const data = await response.json()
         if (response.status === 401) {
-          // Clear stored password and redirect to login
-          localStorage.removeItem('admin-password');
-          setErrors({ form: 'Admin session expired. Please log in again.' });
-          router.push('/login');
-          return;
+          // Clear the password if unauthorized
+          if (lockerId) {
+            localStorage.removeItem(`locker-${lockerId}`)
+            router.push('/private-resources')
+          } else {
+            localStorage.removeItem('admin-password')
+            router.push('/login')
+          }
+          return
         }
-        
-        throw new Error(data.error || `Failed to ${isEditing ? 'update' : 'save'} resource`);
+        throw new Error(data.error || 'Failed to save resource')
       }
 
-      // Success - redirect to resources page
-      router.push('/resources');
-      router.refresh();
+      // Redirect after successful submission
+      if (lockerId) {
+        router.push(`/private-resources/${lockerId}`)
+      } else {
+        router.push('/resources')
+      }
+      router.refresh()
     } catch (error) {
-      console.error('Error saving resource:', error);
-      setErrors({
-        form: error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'save'} resource. Please try again.`
-      });
+      console.error('Error submitting form:', error)
+      setError(error instanceof Error ? error.message : 'Failed to save resource')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className="rounded-xl bg-white p-6 shadow-md dark:bg-gray-800">

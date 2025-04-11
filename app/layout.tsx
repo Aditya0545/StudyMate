@@ -62,7 +62,7 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="min-h-screen bg-white transition-colors duration-300 dark:bg-gray-900">
             <Header />
-            <main className="mx-auto max-w-7xl">
+            <main>
               {children}
             </main>
           </div>

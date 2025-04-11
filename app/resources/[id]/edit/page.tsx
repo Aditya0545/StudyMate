@@ -44,6 +44,7 @@ export default function EditResourcePage({ params }: { params: { id: string } })
         
         // First check auth status
         const authResponse = await fetch('/api/auth/check-admin', {
+          method: 'POST',
           headers: {
             'X-Admin-Password': adminPassword
           }
