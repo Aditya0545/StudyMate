@@ -197,10 +197,11 @@ export default function ResourcesPage() {
   }, [resources, searchTerm, selectedCategory, selectedType, selectedTag])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resources</h1>
-        <div className="flex gap-4">
+    <div className="container mx-auto px-4 py-4">
+      {/* Header Section */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl sm:text-4xl font-bold animated-heading-main">Resources</h1>
+        <div className="flex items-center space-x-4">
           {!isAdmin ? (
             <Link
               href="/login"
@@ -215,14 +216,14 @@ export default function ResourcesPage() {
             <>
               <Link
                 href="/resources/new"
-                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               >
                 <PlusIcon className="mr-2 h-5 w-5" />
                 Add New
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                 Logout
@@ -232,12 +233,12 @@ export default function ResourcesPage() {
         </div>
       </div>
       
-      {/* Filters */}
-      <div className="mb-6 space-y-4 rounded-lg bg-white p-4 shadow dark:bg-gray-800 sm:space-y-0 sm:p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Filters Section */}
+      <div className="mb-4 space-y-3 rounded-lg bg-white p-3 shadow dark:bg-gray-800">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* Search */}
-          <div>
-            <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="w-full">
+            <label htmlFor="search" className="mb-1 block text-sm font-medium animated-heading-accent">
               Search
             </label>
             <input
@@ -249,10 +250,10 @@ export default function ResourcesPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
-          
+
           {/* Category Filter */}
-          <div>
-            <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="w-full">
+            <label htmlFor="category" className="mb-1 block text-sm font-medium animated-heading-accent">
               Category
             </label>
             <select
@@ -269,10 +270,10 @@ export default function ResourcesPage() {
               ))}
             </select>
           </div>
-          
+
           {/* Type Filter */}
-          <div>
-            <label htmlFor="type" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="w-full">
+            <label htmlFor="type" className="mb-1 block text-sm font-medium animated-heading-accent">
               Type
             </label>
             <select
@@ -282,17 +283,17 @@ export default function ResourcesPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Types</option>
-              <option value="note">Notes</option>
-              <option value="link">Links</option>
-              <option value="video">Videos</option>
-              <option value="document">Documents</option>
-              <option value="command">Commands</option>
+              <option value="note">Note</option>
+              <option value="link">Link</option>
+              <option value="video">Video</option>
+              <option value="document">Document</option>
+              <option value="command">Command</option>
             </select>
           </div>
-          
+
           {/* Tag Filter */}
-          <div>
-            <label htmlFor="tag" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="w-full">
+            <label htmlFor="tag" className="mb-1 block text-sm font-medium animated-heading-accent">
               Tag
             </label>
             <select
@@ -310,75 +311,37 @@ export default function ResourcesPage() {
             </select>
           </div>
         </div>
-        
+
         {/* Clear Filters Button */}
-        <div className="mt-4 flex justify-end">
+        <div className="flex justify-end pt-2">
           <button
             onClick={handleResetFilters}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           >
             Clear Filters
           </button>
         </div>
       </div>
-      
-      {/* Resources Display */}
-      {loading ? (
-        <div className="mt-8 flex h-64 items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-          <span className="ml-3 text-lg">Loading resources...</span>
-        </div>
-      ) : error ? (
-        <div className="mt-8 rounded-lg bg-red-100 p-4 dark:bg-red-900/30">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : filteredResources.length === 0 ? (
-        <div className="mt-8 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-            <FolderIcon className="h-16 w-16 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-xl font-medium text-gray-900 dark:text-white">No resources found</h3>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            {searchTerm || selectedCategory || selectedType || selectedTag
-              ? "No resources match your current filters. Try changing or clearing your filters."
-              : isAdmin ? "Get started by creating your first resource." : "No resources available yet."}
-          </p>
-          {isAdmin && (
-            <div className="mt-6">
-              <Link 
-                href="/resources/new" 
-                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                <PlusIcon className="mr-2 h-5 w-5" />
-                Add Resource
-              </Link>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredResources.map((resource) => (
-            <ResourceCard 
-              key={resource._id} 
+
+      {/* Resources Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          <div className="col-span-full text-center">Loading...</div>
+        ) : error ? (
+          <div className="col-span-full text-center text-red-500">{error}</div>
+        ) : filteredResources.length === 0 ? (
+          <div className="col-span-full text-center">No resources found.</div>
+        ) : (
+          filteredResources.map((resource) => (
+            <ResourceCard
+              key={resource._id}
               resource={resource}
               isAdmin={isAdmin}
-              onDelete={handleDeleteResource}
+              onDelete={() => handleDeleteResource(resource._id)}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 } 

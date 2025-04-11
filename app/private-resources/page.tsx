@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { PlusIcon, LockClosedIcon, LockOpenIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, LockClosedIcon, LockOpenIcon, TrashIcon, PencilIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 
 interface Locker {
   _id: string
@@ -223,7 +223,7 @@ export default function PrivateResourcesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Private Resources</h1>
+        <h1 className="text-3xl font-bold animated-heading-main">Private Resources</h1>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
@@ -240,53 +240,55 @@ export default function PrivateResourcesPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {lockers.map((locker) => (
+        {lockers.map((locker, index) => (
           <div
             key={locker._id}
-            className="overflow-hidden rounded-lg bg-white shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800"
+            className="locker-card fade-in"
+            style={{ animationDelay: `${index * 0.2}s` }}
           >
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{locker.name}</h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setSelectedLocker(locker)
-                      setActionType('unlock')
-                      setShowPasswordModal(true)
-                    }}
-                    className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                    title="Unlock locker"
-                  >
-                    <LockClosedIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedLocker(locker)
-                      setActionType('edit')
-                      setShowPasswordModal(true)
-                    }}
-                    className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                    title="Edit locker"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedLocker(locker)
-                      setActionType('delete')
-                      setShowPasswordModal(true)
-                    }}
-                    className="rounded p-1 text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
-                    title="Delete locker"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
+            <div className="locker-content">
+              <span className="locker-number">#{index + 1}</span>
+              <div className="locker-actions">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedLocker(locker);
+                    setActionType('edit');
+                    setShowPasswordModal(true);
+                  }}
+                  className="locker-action-btn"
+                  title="Edit locker"
+                >
+                  <PencilIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedLocker(locker);
+                    setActionType('delete');
+                    setShowPasswordModal(true);
+                  }}
+                  className="locker-action-btn delete"
+                  title="Delete locker"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
               </div>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Created on {new Date(locker.createdAt).toLocaleDateString()}
-              </p>
+              <div 
+                className="mt-4 cursor-pointer"
+                onClick={() => {
+                  setSelectedLocker(locker);
+                  setActionType('unlock');
+                  setShowPasswordModal(true);
+                }}
+              >
+                <h3 className="text-lg font-semibold text-white">
+                  {locker.name}
+                </h3>
+                <p className="mt-2 text-sm text-gray-300">
+                  Created on {new Date(locker.createdAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
           </div>
         ))}
@@ -307,7 +309,13 @@ export default function PrivateResourcesPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter locker password"
-                className="w-full rounded-lg border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordVerification();
+                  }
+                }}
+                autoFocus
               />
               {passwordError && (
                 <p className="mt-2 text-sm text-red-600 dark:text-red-400">{passwordError}</p>
@@ -316,17 +324,17 @@ export default function PrivateResourcesPage() {
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => {
-                  setShowPasswordModal(false)
-                  setPassword('')
-                  setPasswordError(null)
+                  setShowPasswordModal(false);
+                  setPassword('');
+                  setPasswordError(null);
                 }}
-                className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+                className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handlePasswordVerification}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {actionType === 'unlock' ? 'Unlock' : 'Verify'}
               </button>

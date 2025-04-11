@@ -273,7 +273,9 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
 
         {/* Card Preview Content */}
         <div className="px-4 py-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{resource.title}</h3>
+          <h3 className="text-lg font-semibold gradient-text-accent">
+            {resource.title}
+          </h3>
           
           {/* Description (always truncated in card) */}
           {resource.description && (
@@ -334,7 +336,9 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
                 </span>
               </div>
               
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{resource.title}</h2>
+              <h2 className="text-2xl font-bold gradient-text-primary">
+                {resource.title}
+              </h2>
 
               {/* Full Description */}
               {resource.description && (

@@ -27,14 +27,18 @@ export default function CreatorModal({ isOpen, onClose }: CreatorModalProps) {
         {/* Content */}
         <div className="flex flex-col items-center space-y-6">
           {/* Profile Image */}
-          <div className="relative h-32 w-32 overflow-hidden rounded-full">
-            <Image
-              src="/aditya_compressed.jpg"
-              alt="Creator Avatar"
-              width={128}
-              height={128}
-              className="object-cover"
-            />
+          <div className="relative h-32 w-32">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 p-1">
+              <div className="relative h-full w-full overflow-hidden rounded-full">
+                <Image
+                  src="/aditya_compressed.jpg"
+                  alt="Creator Avatar"
+                  width={128}
+                  height={128}
+                  className="object-cover"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Creator Info */}
