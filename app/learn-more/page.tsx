@@ -1,11 +1,13 @@
+'use client'
+
 export default function LearnMorePage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-8 text-4xl font-bold text-gray-900 dark:text-white">About StudyMate</h1>
+        <h1 className="mb-8 text-4xl font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400 bg-clip-text text-transparent animate-gradient-slow">About StudyMate</h1>
         
         <section className="mb-12 rounded-xl bg-white p-8 shadow-lg dark:bg-gray-800">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">What is StudyMate?</h2>
+          <h2 className="mb-4 text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">What is StudyMate?</h2>
           <p className="mb-4 text-gray-700 dark:text-gray-300">
             StudyMate is a smart study organizer designed to help students, professionals, and lifelong learners organize their study materials in one place. 
             Whether you're preparing for exams, learning new skills, or just trying to keep your knowledge organized, StudyMate provides the tools you need.
@@ -16,7 +18,7 @@ export default function LearnMorePage() {
         </section>
         
         <section className="mb-12 rounded-xl bg-white p-8 shadow-lg dark:bg-gray-800">
-          <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Key Features</h2>
+          <h2 className="mb-6 text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Key Features</h2>
           
           <div className="space-y-6">
             <div className="flex">
@@ -26,7 +28,7 @@ export default function LearnMorePage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Resource Management</h3>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Resource Management</h3>
                 <p className="text-gray-700 dark:text-gray-300">Create, edit, and organize different types of study materials in one central location.</p>
               </div>
             </div>
@@ -38,7 +40,7 @@ export default function LearnMorePage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Smart Categorization</h3>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Smart Categorization</h3>
                 <p className="text-gray-700 dark:text-gray-300">Organize resources by category and add custom tags to make them easy to find later.</p>
               </div>
             </div>
@@ -50,7 +52,7 @@ export default function LearnMorePage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Powerful Search</h3>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Powerful Search</h3>
                 <p className="text-gray-700 dark:text-gray-300">Quickly find what you need with advanced search and filtering capabilities.</p>
               </div>
             </div>
@@ -62,7 +64,7 @@ export default function LearnMorePage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Multi-format Support</h3>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">Multi-format Support</h3>
                 <p className="text-gray-700 dark:text-gray-300">Store notes, links, videos, and documents all in one platform.</p>
               </div>
             </div>
@@ -72,7 +74,7 @@ export default function LearnMorePage() {
         <div className="text-center">
           <a 
             href="/resources" 
-            className="inline-block rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+            className="inline-block rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 px-8 py-4 text-lg font-semibold text-white transition-all duration-200"
           >
             Start Organizing Your Study Materials
           </a>
