@@ -11,6 +11,17 @@ export default function Header() {
   const [isCreatorModalOpen, setIsCreatorModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Add scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -77,52 +88,65 @@ export default function Header() {
 
   return (
     <>
-      <header className="relative">
-        {/* Header Content */}
-        <div className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 backdrop-blur-sm transition-colors duration-300 dark:border-gray-800 dark:bg-gray-900/80">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center space-x-8">
+      <header className="fixed top-0 left-0 right-0 w-full bg-white dark:bg-gray-800 shadow-sm" style={{ zIndex: 40 }}>
+        <div className="w-full">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+            {/* Left section - Logo and Navigation */}
+            <div className="flex items-center lg:space-x-8">
               <Link href="/" className="text-xl font-bold text-gray-900 transition-colors duration-300 dark:text-white">
                 <Logo />
               </Link>
-              <nav className="hidden space-x-6 md:flex">
-                <Link href="/resources" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              <nav className="hidden lg:flex lg:space-x-8">
+                <Link 
+                  href="/resources" 
+                  className="nav-link relative inline-block"
+                >
                   Resources
                 </Link>
-                <Link href="/private-resources" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                <Link 
+                  href="/private-resources" 
+                  className="nav-link relative inline-block"
+                >
                   MY Assets
                 </Link>
                 <button
                   onClick={() => setIsCreatorModalOpen(true)}
-                  className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                  className="nav-link relative inline-block"
                 >
                   Creator's Corner
                 </button>
               </nav>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <ThemeSelect />
-              {/* Hamburger Menu Button */}
-              <button
-                id="hamburger-button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden"
-                aria-label="Menu"
-              >
-                {isMobileMenuOpen ? (
-                  <XMarkIcon className="h-6 w-6" />
-                ) : (
-                  <Bars3Icon className="h-6 w-6" />
-                )}
-              </button>
+            {/* Right section - Theme, Admin, Logout */}
+            <div className="flex items-center">
+              <div className="flex items-center space-x-4">
+                <ThemeSelect />
+                {/* Only show hamburger on mobile */}
+                <button
+                  id="hamburger-button"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="ml-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 lg:hidden"
+                  aria-label="Menu"
+                >
+                  {isMobileMenuOpen ? (
+                    <XMarkIcon className="h-6 w-6" />
+                  ) : (
+                    <Bars3Icon className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu Container */}
-        <div className={`fixed inset-0 z-40 md:hidden ${isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-          {/* Mobile Menu Overlay */}
+        {/* Mobile Navigation Menu */}
+        <div 
+          className={`fixed inset-0 z-50 lg:hidden ${
+            isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
+        >
+          {/* Overlay */}
           <div 
             className={`fixed inset-0 bg-black/50 transition-opacity duration-300 ${
               isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
@@ -130,7 +154,7 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          {/* Mobile Navigation Menu */}
+          {/* Menu Panel */}
           <div
             id="mobile-menu"
             className={`absolute right-0 top-0 h-full w-64 transform overflow-y-auto bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out dark:bg-gray-800 ${
@@ -192,8 +216,9 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Creator Modal */}
       <CreatorModal isOpen={isCreatorModalOpen} onClose={() => setIsCreatorModalOpen(false)} />
+      {/* Spacer for fixed header */}
+      <div className="h-[56px]"></div>
     </>
   );
 } 
