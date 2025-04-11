@@ -2,34 +2,33 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    // Get the admin password from localStorage on the client side
     const adminPassword = request.headers.get('X-Admin-Password');
-    const configuredPassword = process.env.RESOURCES_PASSWORD;
-
-    if (!configuredPassword) {
-      console.error('RESOURCES_PASSWORD environment variable is not set');
-      return NextResponse.json({ 
-        isAdmin: false, 
-        isAuthenticated: false,
-        error: 'Server configuration error' 
-      });
+    
+    if (!adminPassword) {
+      return NextResponse.json({ isAdmin: false, message: 'No admin password provided' }, { status: 401 });
     }
 
-    const isAdmin = adminPassword === configuredPassword;
+    const expectedPassword = process.env.RESOURCES_PASSWORD;
+    if (!expectedPassword) {
+      console.error('RESOURCES_PASSWORD environment variable is not set');
+      return NextResponse.json({ isAdmin: false, message: 'Server configuration error' }, { status: 500 });
+    }
 
-    return NextResponse.json({
-      isAdmin,
-      isAuthenticated: isAdmin,
-      message: isAdmin ? 'Admin authenticated' : 'Not authenticated as admin'
-    });
+    const isAdmin = adminPassword === expectedPassword;
+    
+    if (!isAdmin) {
+      return NextResponse.json({ isAdmin: false, message: 'Invalid admin password' }, { status: 401 });
+    }
+
+    return NextResponse.json({ isAdmin: true });
   } catch (error) {
-    console.error('Error checking admin status:', error);
-    return NextResponse.json({ 
-      isAdmin: false, 
-      isAuthenticated: false,
-      error: 'Failed to check admin status' 
-    });
+    console.error('Error in admin check:', error);
+    return NextResponse.json({ isAdmin: false, message: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ message: 'Method not allowed' }, { status: 405 });
 } 

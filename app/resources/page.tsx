@@ -98,7 +98,7 @@ export default function ResourcesPage() {
     }
     
     fetchResources()
-  }, [searchTerm, selectedCategory, selectedType, selectedTag])
+  }, [])
   
   // Check admin status
   useEffect(() => {
@@ -112,6 +112,7 @@ export default function ResourcesPage() {
         }
 
         const response = await fetch('/api/auth/check-admin', {
+          method: 'POST',
           headers: {
             'X-Admin-Password': adminPassword
           }

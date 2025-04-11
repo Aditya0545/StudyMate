@@ -5,10 +5,24 @@ import Link from 'next/link'
 import Logo from './Logo'
 import CreatorModal from './CreatorModal'
 import ThemeSelect from './ThemeSelect'
+import { Bars3Icon, XMarkIcon, HomeIcon, BookOpenIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline'
 
 export default function Header() {
   const [isCreatorModalOpen, setIsCreatorModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   // Check admin status
   useEffect(() => {
@@ -22,6 +36,7 @@ export default function Header() {
         }
 
         const response = await fetch('/api/auth/check-admin', {
+          method: 'POST',
           headers: {
             'X-Admin-Password': adminPassword
           }
@@ -43,55 +58,141 @@ export default function Header() {
     checkAdminStatus();
   }, []);
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const mobileMenu = document.getElementById('mobile-menu');
+      const hamburgerButton = document.getElementById('hamburger-button');
+      
+      if (mobileMenu && hamburgerButton && 
+          !mobileMenu.contains(event.target as Node) && 
+          !hamburgerButton.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-sm transition-colors duration-300 dark:border-gray-800 dark:bg-gray-900/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="text-xl font-bold text-gray-900 transition-colors duration-300 dark:text-white">
-              <Logo />
-            </Link>
-            <nav className="hidden space-x-6 md:flex">
-              <Link href="/resources" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                Resources
+      <header className="relative">
+        {/* Header Content */}
+        <div className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 backdrop-blur-sm transition-colors duration-300 dark:border-gray-800 dark:bg-gray-900/80">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex items-center space-x-8">
+              <Link href="/" className="text-xl font-bold text-gray-900 transition-colors duration-300 dark:text-white">
+                <Logo />
               </Link>
+              <nav className="hidden space-x-6 md:flex">
+                <Link href="/resources" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                  Resources
+                </Link>
+                <Link href="/private-resources" className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                  MY Assets
+                </Link>
+                <button
+                  onClick={() => setIsCreatorModalOpen(true)}
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                >
+                  Creator's Corner
+                </button>
+              </nav>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <ThemeSelect />
+              {/* Hamburger Menu Button */}
               <button
-                onClick={() => setIsCreatorModalOpen(true)}
-                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                id="hamburger-button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden"
+                aria-label="Menu"
               >
-                Creator's Corner
+                {isMobileMenuOpen ? (
+                  <XMarkIcon className="h-6 w-6" />
+                ) : (
+                  <Bars3Icon className="h-6 w-6" />
+                )}
               </button>
-            </nav>
+            </div>
           </div>
-          <ThemeSelect />
         </div>
-        {/* Mobile Navigation */}
-        <div className="md:hidden">
-          <div className="flex justify-around border-t border-gray-200 py-2 dark:border-gray-800">
-            <Link href="/" className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span className="ml-1">Home</span>
-            </Link>
-            <Link href="/resources" className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span className="ml-1">Resources</span>
-            </Link>
-            <button
-              onClick={() => setIsCreatorModalOpen(true)}
-              className="flex flex-1 items-center justify-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="ml-1">Creator</span>
-            </button>
+
+        {/* Mobile Menu Container */}
+        <div className={`fixed inset-0 z-40 md:hidden ${isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+          {/* Mobile Menu Overlay */}
+          <div 
+            className={`fixed inset-0 bg-black/50 transition-opacity duration-300 ${
+              isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Mobile Navigation Menu */}
+          <div
+            id="mobile-menu"
+            className={`absolute right-0 top-0 h-full w-64 transform overflow-y-auto bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out dark:bg-gray-800 ${
+              isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <div className="flex flex-col space-y-6">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  aria-label="Close menu"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col space-y-4">
+                <Link 
+                  href="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center space-x-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <HomeIcon className="h-5 w-5" />
+                  <span>Home</span>
+                </Link>
+
+                <Link 
+                  href="/resources"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center space-x-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <BookOpenIcon className="h-5 w-5" />
+                  <span>Resources</span>
+                </Link>
+
+                <Link 
+                  href="/private-resources"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center space-x-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <LockClosedIcon className="h-5 w-5" />
+                  <span>MY Assets</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsCreatorModalOpen(true);
+                  }}
+                  className="flex items-center space-x-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  <UserIcon className="h-5 w-5" />
+                  <span>Creator's Corner</span>
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Creator Modal */}
       <CreatorModal isOpen={isCreatorModalOpen} onClose={() => setIsCreatorModalOpen(false)} />
     </>
   );

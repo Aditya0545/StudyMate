@@ -20,6 +20,7 @@ export default function NewResourcePage() {
         }
 
         const response = await fetch('/api/auth/check-admin', {
+          method: 'POST',
           headers: {
             'X-Admin-Password': adminPassword
           }
