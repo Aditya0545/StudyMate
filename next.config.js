@@ -5,6 +5,16 @@ const nextConfig = {
   output: 'standalone',
   images: {
     unoptimized: true
+  },
+  experimental: {
+    optimizePackageImports: ['@heroicons/react']
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+    };
+    return config;
   }
 }
 

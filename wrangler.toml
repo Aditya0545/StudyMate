@@ -1,2 +1,5 @@
 name = "studymate"
-compatibility_date = "2024-04-12" 
+compatibility_date = "2024-04-12"
+
+[assets]
+directory = ".next" 

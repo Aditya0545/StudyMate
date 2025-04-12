@@ -3,6 +3,8 @@
     "command": "npm run build",
     "publish": ".next",
     "nodeVersion": "18",
-    "framework": "nextjs"
+    "framework": "nextjs",
+    "buildCaching": true,
+    "installCommand": "npm install"
   }
 } 
