@@ -209,6 +209,18 @@ export default function PrivateResourcesPage() {
     }
   }
 
+  const handleLockerClick = (e: React.MouseEvent, locker: Locker) => {
+    e.preventDefault();
+    // Clear any existing state first
+    setPasswordError(null);
+    setPassword('');
+    
+    // Set the new state in one batch
+    setSelectedLocker(locker);
+    setActionType('unlock');
+    setShowPasswordModal(true);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -243,15 +255,20 @@ export default function PrivateResourcesPage() {
         {lockers.map((locker, index) => (
           <div
             key={locker._id}
-            className="locker-card fade-in"
+            className="locker-card fade-in cursor-pointer"
             style={{ animationDelay: `${index * 0.2}s` }}
+            onClick={(e) => {
+              if (showPasswordModal) return;
+              handleLockerClick(e, locker);
+            }}
           >
-            <div className="locker-content">
+            <div className="locker-content relative">
               <span className="locker-number">#{index + 1}</span>
-              <div className="locker-actions">
+              <div className="locker-actions z-10">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (showPasswordModal) return;
                     setSelectedLocker(locker);
                     setActionType('edit');
                     setShowPasswordModal(true);
@@ -264,6 +281,7 @@ export default function PrivateResourcesPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (showPasswordModal) return;
                     setSelectedLocker(locker);
                     setActionType('delete');
                     setShowPasswordModal(true);
@@ -274,14 +292,7 @@ export default function PrivateResourcesPage() {
                   <TrashIcon className="h-5 w-5" />
                 </button>
               </div>
-              <div 
-                className="mt-4 cursor-pointer"
-                onClick={() => {
-                  setSelectedLocker(locker);
-                  setActionType('unlock');
-                  setShowPasswordModal(true);
-                }}
-              >
+              <div className="mt-4 w-full text-left">
                 <h3 className="text-lg font-semibold text-white">
                   {locker.name}
                 </h3>

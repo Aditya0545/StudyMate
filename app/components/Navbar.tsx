@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { GlobeAltIcon } from '@heroicons/react/24/outline'
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,12 +43,23 @@ export default function Navbar() {
             >
               MY Assets
             </Link>
-            <Link
-              href="/creators-corner"
-              className="nav-link"
-            >
-              Creator's Corner
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/creators-corner"
+                className="nav-link"
+              >
+                Creator's Corner
+              </Link>
+              <a
+                href="https://adityakumar.store"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 transition-colors duration-200"
+                title="Visit Portfolio"
+              >
+                <GlobeAltIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

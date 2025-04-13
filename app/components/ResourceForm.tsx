@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import YoutubePreview from './YoutubePreview'
 import { getVideoMetadata } from '@/app/lib/youtube'
+import { CATEGORIES, CategoryType, TAG_COLORS } from '@/constants'
 
 type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
@@ -16,7 +17,7 @@ interface ResourceFormProps {
     url?: string
     content?: string
     tags: string[]
-    category: string
+    categories: string[]
     videoMetadata?: {
       id: string
       title: string
@@ -30,35 +31,29 @@ interface ResourceFormProps {
   lockerId?: string
 }
 
-// List of tag colors for variety (same as in ResourceCard)
-const TAG_COLORS = [
-  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-  'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-  'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-  'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
-]
-
-interface FormData {
-  _id?: string
-  title: string
-  description: string
-  type: 'note' | 'link' | 'video' | 'document' | 'command'
-  url?: string
-  content?: string
-  tags: string[]
-  category: string
+interface ResourceFormData {
+  _id?: string;
+  title: string;
+  description: string;
+  type: ResourceType;
+  url?: string;
+  content?: string;
+  tags: string[];
+  categories: string[];
   videoMetadata?: {
-    id: string
-    title: string
-    description: string
-    thumbnail: string
-    channelTitle: string
-    publishedAt: string
-  }
+    id: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    channelTitle: string;
+    publishedAt: string;
+  };
+  urlMetadata?: {
+    title: string;
+    description: string;
+    image: string;
+    url: string;
+  };
 }
 
 export default function ResourceForm({
@@ -66,20 +61,21 @@ export default function ResourceForm({
   isEditing = false,
   lockerId,
 }: {
-  initialData?: FormData
-  isEditing?: boolean
-  lockerId?: string
+  initialData?: ResourceFormData;
+  isEditing?: boolean;
+  lockerId?: string;
 }) {
   const router = useRouter()
-  const [formData, setFormData] = useState<FormData>(() => ({
+  const [formData, setFormData] = useState<ResourceFormData>(() => ({
     title: initialData?.title || '',
     description: initialData?.description || '',
     type: initialData?.type || 'note',
     url: initialData?.url || '',
     content: initialData?.content || '',
     tags: initialData?.tags || [],
-    category: initialData?.category || '',
+    categories: initialData?.categories || [],
     videoMetadata: initialData?.videoMetadata,
+    urlMetadata: initialData?.urlMetadata,
     _id: initialData?._id
   }))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -90,29 +86,24 @@ export default function ResourceForm({
   const [showVideoPreview, setShowVideoPreview] = useState(!!initialData?.url && initialData?.type === 'video')
   const [error, setError] = useState<string | null>(null)
   
-  // Updated categories
-  const categories = [
-    'Machine Learning',
-    'Web Development',
-    'Java',
-    'Software Engineering',
-    'GDG',
-    'Computer Networks',
-    'Compiler Design',
-    'Other'
-  ]
+  // Get all unique categories from resources
+  const [allCategories, setAllCategories] = useState<string[]>([])
 
-  // Effect to handle initial video preview
+  // Fetch all categories on mount
   useEffect(() => {
-    if (initialData?.type === 'video' && initialData?.url) {
-      setVideoPreviewUrl(initialData.url)
-      setShowVideoPreview(true)
-      setFormData(prev => ({
-        ...prev,
-        videoMetadata: initialData.videoMetadata
-      }))
-    }
-  }, [initialData])
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/resources/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setAllCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -221,10 +212,6 @@ export default function ResourceForm({
     
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required'
-    }
-    
-    if (!formData.category) {
-      newErrors.category = 'Category is required'
     }
     
     if (formData.type === 'link' || formData.type === 'video') {
@@ -427,21 +414,36 @@ export default function ResourceForm({
         
         {/* Category */}
         <div>
-          <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-200">
+          <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-200">
             Category <span className="text-red-500">*</span>
           </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-          >
-            <option value="">Select a category</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
+          
+          {/* Predefined Categories */}
+          <div className="mb-3 flex flex-wrap gap-2">
+            {(Object.keys(CATEGORIES) as CategoryType[]).map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    categories: prev.categories.includes(category) 
+                      ? prev.categories.filter(c => c !== category)
+                      : [...prev.categories, category]
+                  }));
+                }}
+                className={`
+                  relative overflow-hidden rounded-full px-4 py-2 text-sm font-medium transition-all duration-300
+                  ${formData.categories.includes(category)
+                    ? `${CATEGORIES[category]} shadow-md transform scale-105`
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }
+                `}
+              >
+                {category}
+              </button>
             ))}
-          </select>
+          </div>
           {errors.category && <p className="mt-1 text-sm text-red-500">{errors.category}</p>}
         </div>
         

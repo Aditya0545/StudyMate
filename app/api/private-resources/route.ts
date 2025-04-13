@@ -96,9 +96,9 @@ export async function POST(request: Request) {
     const data = await request.json()
     
     // Validate required fields
-    if (!data.title || !data.category) {
+    if (!data.title || !data.categories || !Array.isArray(data.categories) || data.categories.length === 0) {
       return NextResponse.json(
-        { error: 'Title and category are required' },
+        { error: 'Title and at least one category are required' },
         { status: 400 }
       )
     }

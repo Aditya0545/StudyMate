@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/app/lib/mongodb';
 import { getVideoMetadata } from '@/app/lib/youtube';
 import { ObjectId } from 'mongodb';
 
@@ -14,19 +14,45 @@ interface UrlMetadata {
   publishedAt?: string;
 }
 
+interface Resource {
+  _id?: ObjectId;
+  title: string;
+  description: string;
+  type: 'note' | 'link' | 'video' | 'document' | 'command';
+  url?: string;
+  content?: string;
+  tags: string[];
+  categories: string[];
+  createdAt: Date;
+  videoMetadata?: {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    channelTitle: string;
+    publishedAt: string;
+  };
+  urlMetadata?: {
+    title: string;
+    description: string;
+    image: string;
+    url: string;
+  };
+}
+
 // Helper function to check admin password
-const checkAdminPassword = (request: Request): boolean => {
+const checkAdminPassword = (request: NextRequest): boolean => {
   const adminPassword = request.headers.get('X-Admin-Password');
   return adminPassword === process.env.RESOURCES_PASSWORD;
 };
 
 // GET doesn't require authentication - public access
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
-    const { db } = await connectToDatabase();
+    const db = await connectToDatabase();
     const collection = db.collection('resources');
     
     if (id) {
@@ -48,7 +74,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Check admin password
     if (!checkAdminPassword(request)) {
@@ -58,41 +84,36 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await request.json();
+    const db = await connectToDatabase();
+    const body = await request.json();
     
-    // Validate required fields
-    if (!data.title || !data.category) {
-      return NextResponse.json(
-        { error: 'Title and category are required' },
-        { status: 400 }
-      );
-    }
-
-    const { db } = await connectToDatabase();
-    const collection = db.collection('resources');
-    
-    const resourceToInsert = {
-      ...data,
-      createdAt: new Date().toISOString()
+    // Create the resource object with proper types
+    const resource: Resource = {
+      title: body.title,
+      description: body.description,
+      type: body.type,
+      url: body.url,
+      content: body.content,
+      tags: body.tags || [],
+      categories: body.categories || [],
+      createdAt: new Date(),
+      videoMetadata: body.videoMetadata,
+      urlMetadata: body.urlMetadata
     };
     
-    const result = await collection.insertOne(resourceToInsert);
+    const result = await db.collection('resources').insertOne(resource);
     
     return NextResponse.json({
       success: true,
-      _id: result.insertedId,
-      ...resourceToInsert
+      _id: result.insertedId
     });
   } catch (error) {
-    console.error('Error in POST /api/resources:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create resource' },
-      { status: 500 }
-    );
+    console.error('Error creating resource:', error);
+    return NextResponse.json({ success: false, error: 'Failed to create resource' }, { status: 500 });
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
     // Check admin password
     if (!checkAdminPassword(request)) {
@@ -112,40 +133,40 @@ export async function PUT(request: Request) {
       );
     }
     
-    const data = await request.json();
-    const { db } = await connectToDatabase();
-    const collection = db.collection('resources');
+    const db = await connectToDatabase();
+    const body = await request.json();
     
-    // Remove _id from update data if present
-    const { _id, ...updateData } = data;
-    
-    const result = await collection.findOneAndUpdate(
+    // Update the resource with proper ObjectId
+    const result = await db.collection('resources').updateOne(
       { _id: new ObjectId(id) },
-      { $set: { ...updateData, updatedAt: new Date().toISOString() } },
-      { returnDocument: 'after' }
+      {
+        $set: {
+          title: body.title,
+          description: body.description,
+          type: body.type,
+          url: body.url,
+          content: body.content,
+          tags: body.tags,
+          categories: body.categories,
+          videoMetadata: body.videoMetadata,
+          urlMetadata: body.urlMetadata,
+          updatedAt: new Date()
+        }
+      }
     );
     
-    if (!result) {
-      return NextResponse.json(
-        { error: 'Resource not found' },
-        { status: 404 }
-      );
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 });
     }
     
-    return NextResponse.json({
-      success: true,
-      resource: result
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in PUT /api/resources:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update resource' },
-      { status: 500 }
-    );
+    console.error('Error updating resource:', error);
+    return NextResponse.json({ success: false, error: 'Failed to update resource' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     // Check admin password
     if (!checkAdminPassword(request)) {
@@ -165,7 +186,7 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const { db } = await connectToDatabase();
+    const db = await connectToDatabase();
     const collection = db.collection('resources');
     
     const result = await collection.deleteOne({ _id: new ObjectId(id) });

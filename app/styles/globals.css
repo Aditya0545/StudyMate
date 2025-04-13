@@ -46,35 +46,56 @@
 }
 
 @keyframes colorChange {
-  0% { color: #ff0000; }  /* Red */
-  20% { color: #00ff00; } /* Green */
-  40% { color: #ff8000; } /* Orange */
-  60% { color: #0000ff; } /* Blue */
-  80% { color: #ffff00; } /* Yellow */
-  100% { color: #ff0000; } /* Back to Red */
+  0% { color: #ff0000; }    /* Red */
+  14% { color: #ff7f00; }   /* Orange */
+  28% { color: #ffff00; }   /* Yellow */
+  42% { color: #00ff00; }   /* Green */
+  56% { color: #0000ff; }   /* Blue */
+  70% { color: #4b0082; }   /* Indigo */
+  84% { color: #9400d3; }   /* Violet */
+  100% { color: #ff0000; }  /* Back to Red */
 }
 
 .rainbow-text {
-  animation: colorChange 5s linear infinite;
-  font-weight: bold;
+  background-image: linear-gradient(
+    to right,
+    #FF3366,  /* Bright Pink */
+    #FF9933,  /* Bright Orange */
+    #FFCC00,  /* Bright Yellow */
+    #33CC33,  /* Bright Green */
+    #3399FF,  /* Bright Blue */
+    #9933FF,  /* Bright Purple */
+    #FF33CC,  /* Bright Magenta */
+    #FF3366   /* Back to Bright Pink */
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 6s linear infinite;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.1); /* Subtle glow effect */
 }
 
 @layer utilities {
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-size: 300% 300%;
-    animation: rainbow 5s ease infinite;
+    background-size: 200% auto;
+    animation: rainbow 6s linear infinite;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
   }
 
   .gradient-text-primary {
     @apply gradient-text;
     background-image: linear-gradient(
       to right,
-      #ff0000,
-      #00ff00,
-      #ff8000,
-      #0000ff,
-      #ffff00
+      #FF3366,  /* Bright Pink */
+      #FF9933,  /* Bright Orange */
+      #FFCC00,  /* Bright Yellow */
+      #33CC33,  /* Bright Green */
+      #3399FF,  /* Bright Blue */
+      #9933FF,  /* Bright Purple */
+      #FF33CC,  /* Bright Magenta */
+      #FF3366   /* Back to Bright Pink */
     );
   }
 
@@ -82,11 +103,14 @@
     @apply gradient-text;
     background-image: linear-gradient(
       to right,
-      #ff0066,
-      #ff00ff,
-      #6600ff,
-      #00ffff,
-      #ff0066
+      #3399FF,  /* Bright Blue */
+      #33CC33,  /* Bright Green */
+      #FF33CC,  /* Bright Magenta */
+      #FF9933,  /* Bright Orange */
+      #9933FF,  /* Bright Purple */
+      #FFCC00,  /* Bright Yellow */
+      #FF3366,  /* Bright Pink */
+      #3399FF   /* Back to Bright Blue */
     );
   }
 
@@ -94,11 +118,14 @@
     @apply gradient-text;
     background-image: linear-gradient(
       to right,
-      #00ffff,
-      #00ff00,
-      #ffff00,
-      #ff0000,
-      #00ffff
+      #9933FF,  /* Bright Purple */
+      #33CC33,  /* Bright Green */
+      #FF3366,  /* Bright Pink */
+      #3399FF,  /* Bright Blue */
+      #FFCC00,  /* Bright Yellow */
+      #FF9933,  /* Bright Orange */
+      #FF33CC,  /* Bright Magenta */
+      #9933FF   /* Back to Bright Purple */
     );
   }
 }
@@ -149,21 +176,230 @@
     @apply block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500;
   }
 
+  /* Modern Card Base Styles */
   .card {
-    @apply rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 hover:shadow-xl
-    dark:bg-gray-900 dark:shadow-gray-800/50;
+    @apply relative overflow-hidden rounded-2xl p-6 
+      backdrop-blur-md transition-all duration-500
+      w-full mx-auto 
+      border border-gray-100 dark:border-gray-700
+      bg-gradient-to-br from-white/80 to-white/50
+      dark:from-gray-800/80 dark:to-gray-800/50;
+    box-shadow: 
+      0 10px 30px -5px rgba(0, 0, 0, 0.1),
+      0 2px 8px -3px rgba(0, 0, 0, 0.05),
+      inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform, box-shadow;
   }
 
-  .card-icon {
-    @apply mb-6 inline-block rounded-xl p-3;
+  /* Responsive Grid Layout */
+  .cards-grid {
+    @apply grid gap-4 sm:gap-6 p-4 sm:p-6;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   }
 
-  .feature-section {
-    @apply bg-white py-16;
+  /* Card Content Styles */
+  .card-content {
+    @apply flex-1 space-y-2 relative z-10;
   }
 
-  .feature-card {
-    @apply bg-white p-6 rounded-lg shadow-lg;
+  .card-title {
+    @apply text-lg font-semibold 
+      text-gray-900 dark:text-white
+      transition-all duration-300;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-description {
+    @apply text-sm 
+      text-gray-600 dark:text-gray-300
+      transition-all duration-300
+      leading-relaxed;
+  }
+
+  /* Tags Styling */
+  .card-tags {
+    @apply mt-3 flex flex-wrap gap-2 relative z-10;
+  }
+
+  .card-tag {
+    @apply inline-flex items-center px-3 py-1 
+      rounded-lg text-xs font-medium
+      bg-gray-100/80 text-gray-800 
+      dark:bg-gray-700/50 dark:text-gray-300
+      backdrop-blur-sm
+      transition-all duration-300;
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.05),
+      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  }
+
+  /* Hover Effects */
+  .card:hover {
+    @apply transform scale-[1.02];
+    box-shadow: 
+      0 20px 40px -5px rgba(0, 0, 0, 0.15),
+      0 4px 12px -3px rgba(0, 0, 0, 0.1),
+      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+      135deg,
+      rgba(96, 165, 250, 0.5),
+      rgba(124, 58, 237, 0.5)
+    );
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .card:hover::before {
+    opacity: 1;
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: 1;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.1)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .dark .card::after {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.02),
+      rgba(255, 255, 255, 0.05)
+    );
+  }
+
+  .card:hover::after {
+    opacity: 1;
+  }
+
+  /* Icon Styles */
+  .card .icon {
+    @apply relative flex h-12 w-12 shrink-0 
+      items-center justify-center 
+      rounded-xl bg-blue-100/80 text-blue-600 
+      dark:bg-blue-900/30 dark:text-blue-400
+      backdrop-blur-sm
+      transition-all duration-300
+      z-10;
+    box-shadow: 
+      0 4px 12px rgba(59, 130, 246, 0.1),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  }
+
+  .card:hover .icon {
+    @apply transform scale-110 rotate-3;
+    box-shadow: 
+      0 8px 16px rgba(59, 130, 246, 0.15),
+      inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 640px) {
+    .card {
+      @apply p-4;
+    }
+
+    .command-card {
+      @apply gap-3;
+    }
+
+    .icon {
+      @apply h-10 w-10;
+    }
+
+    .card-title {
+      @apply text-base;
+    }
+
+    .card-description {
+      @apply text-xs;
+    }
+
+    .card-tags {
+      @apply mt-2 gap-1.5;
+    }
+
+    .card-tag {
+      @apply px-2 py-0.5 text-xs;
+    }
+  }
+
+  /* Active State for Touch Devices */
+  @media (hover: none) {
+    .card:active {
+      @apply transform scale-[0.98];
+      box-shadow: 
+        0 5px 15px -5px rgba(0, 0, 0, 0.1),
+        0 2px 6px -3px rgba(0, 0, 0, 0.05),
+        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  /* Card Loading States - Responsive */
+  .card-skeleton {
+    @apply animate-pulse;
+    min-height: 120px;
+  }
+
+  .card-skeleton .icon {
+    @apply h-10 w-10 sm:h-12 sm:w-12 
+      bg-gray-200 dark:bg-gray-700 rounded-full;
+  }
+
+  .card-skeleton .card-title {
+    @apply h-4 sm:h-5 w-3/4 
+      bg-gray-200 rounded dark:bg-gray-700;
+  }
+
+  .card-skeleton .card-description {
+    @apply h-3 sm:h-4 w-1/2 
+      bg-gray-200 rounded dark:bg-gray-700;
+  }
+
+  /* Safe Area Insets for Modern Mobile Devices */
+  @supports(padding: max(0px)) {
+    .card {
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+  }
+
+  /* Prevent Text Selection on Mobile */
+  .card {
+    @apply select-none sm:select-text;
+  }
+
+  /* Better Touch Targets for Mobile */
+  .card-tag, .icon {
+    min-height: 32px; /* Minimum touch target size */
   }
 
   .nav-link {
@@ -181,5 +417,196 @@
 
   .nav-link:hover::after {
     @apply w-full;
+  }
+}
+
+/* Update animated headings to use gradient instead of color changes */
+.animated-heading-main {
+  @apply font-bold;
+  background-image: linear-gradient(
+    to right,
+    #FF3366,  /* Bright Pink */
+    #FF9933,  /* Bright Orange */
+    #FFCC00,  /* Bright Yellow */
+    #33CC33,  /* Bright Green */
+    #3399FF,  /* Bright Blue */
+    #9933FF,  /* Bright Purple */
+    #FF33CC,  /* Bright Magenta */
+    #FF3366   /* Back to Bright Pink */
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 6s linear infinite;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.animated-heading-secondary {
+  @apply font-semibold;
+  background-image: linear-gradient(
+    to right,
+    #3399FF,  /* Bright Blue */
+    #33CC33,  /* Bright Green */
+    #FF33CC,  /* Bright Magenta */
+    #FF9933,  /* Bright Orange */
+    #9933FF,  /* Bright Purple */
+    #FFCC00,  /* Bright Yellow */
+    #FF3366,  /* Bright Pink */
+    #3399FF   /* Back to Bright Blue */
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 6s linear infinite;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.animated-heading-accent {
+  @apply font-semibold;
+  background-image: linear-gradient(
+    to right,
+    #9933FF,  /* Bright Purple */
+    #33CC33,  /* Bright Green */
+    #FF3366,  /* Bright Pink */
+    #3399FF,  /* Bright Blue */
+    #FFCC00,  /* Bright Yellow */
+    #FF9933,  /* Bright Orange */
+    #FF33CC,  /* Bright Magenta */
+    #9933FF   /* Back to Bright Purple */
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 6s linear infinite;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Card Loading Animation */
+.card-skeleton {
+  @apply animate-pulse;
+}
+
+.card-skeleton .icon {
+  @apply bg-gray-200 dark:bg-gray-700;
+}
+
+.card-skeleton .card-title {
+  @apply h-4 w-3/4 bg-gray-200 rounded dark:bg-gray-700;
+}
+
+.card-skeleton .card-description {
+  @apply h-3 w-1/2 bg-gray-200 rounded dark:bg-gray-700;
+}
+
+/* Command Card Styles */
+.command-card {
+  @apply relative flex items-start gap-5 group cursor-pointer;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(243, 244, 246, 0.8) 100%
+  );
+}
+
+.dark .command-card {
+  background: linear-gradient(
+    145deg,
+    rgba(31, 41, 55, 0.95) 0%,
+    rgba(17, 24, 39, 0.8) 100%
+  );
+}
+
+.command-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    #60A5FA,
+    #7C3AED
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.command-card:hover::before {
+  opacity: 1;
+}
+
+.command-card .icon {
+  @apply relative flex h-12 w-12 shrink-0 items-center justify-center 
+    rounded-xl bg-blue-100 text-blue-600 
+    dark:bg-blue-900/30 dark:text-blue-400
+    transition-all duration-300;
+  box-shadow: 
+    0 4px 12px rgba(59, 130, 246, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.dark .command-card .icon {
+  box-shadow: 
+    0 4px 12px rgba(59, 130, 246, 0.05),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Locker Card Styles */
+.locker-card {
+  @apply relative overflow-hidden rounded-2xl transition-transform duration-300;
+}
+
+.locker-content {
+  @apply relative p-6 bg-gradient-to-br from-blue-500 to-purple-600;
+}
+
+.locker-content > div:last-child {
+  @apply transition-all duration-300;
+}
+
+.locker-content > div:last-child:hover {
+  @apply opacity-80;
+}
+
+.locker-number {
+  @apply absolute top-4 left-4 text-lg font-bold text-white/80;
+}
+
+.locker-actions {
+  @apply absolute top-4 right-4 flex space-x-2;
+}
+
+.locker-action-btn {
+  @apply rounded-full p-2 text-white/80 hover:bg-white/10 transition-colors duration-200;
+}
+
+.locker-action-btn.delete:hover {
+  @apply text-red-400;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 } 

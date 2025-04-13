@@ -13,7 +13,7 @@ interface Resource {
   url?: string
   content?: string
   tags: string[]
-  category: string
+  categories: string[]
   videoMetadata?: {
     id: string
     title: string
@@ -136,7 +136,7 @@ export default function EditResourcePage({ params }: { params: { id: string } })
           url: resource.url,
           content: resource.content,
           tags: resource.tags,
-          category: resource.category,
+          categories: resource.categories,
           videoMetadata: resource.videoMetadata
         }}
         isEditing={true}

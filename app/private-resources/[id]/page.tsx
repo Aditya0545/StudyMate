@@ -14,7 +14,7 @@ interface Resource {
   url?: string
   content?: string
   tags: string[]
-  category: string
+  categories: string[]
   createdAt?: string
   videoMetadata?: {
     id: string
@@ -54,6 +54,9 @@ export default function PrivateLockerPage({ params }: { params: { id: string } }
 
   // Get all unique tags from resources
   const tags = Array.from(new Set(resources.flatMap(r => r.tags).filter(Boolean))).sort()
+
+  // Get all unique categories from resources
+  const categories = Array.from(new Set(resources.flatMap(r => r.categories))).sort()
 
   // Fetch locker and resources
   useEffect(() => {
@@ -158,7 +161,7 @@ export default function PrivateLockerPage({ params }: { params: { id: string } }
       resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     
-    const matchesCategory = selectedCategory === '' || resource.category === selectedCategory
+    const matchesCategory = selectedCategory === '' || resource.categories.includes(selectedCategory)
     const matchesType = selectedType === '' || resource.type === selectedType
     const matchesTag = selectedTag === '' || resource.tags.includes(selectedTag)
     
@@ -240,7 +243,7 @@ export default function PrivateLockerPage({ params }: { params: { id: string } }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All Categories</option>
-              {Array.from(new Set(resources.map(r => r.category))).map((category) => (
+              {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -330,12 +333,16 @@ export default function PrivateLockerPage({ params }: { params: { id: string } }
           {filteredResources.map((resource) => (
             <ResourceCard
               key={resource._id}
-              resource={resource}
+              resource={{
+                ...resource,
+                lockerId: params.id
+              }}
               isAdmin={true}
               onDelete={(id) => {
                 setResourceToDelete(id)
                 setShowDeleteConfirm(true)
               }}
+              className="h-full"
             />
           ))}
         </div>

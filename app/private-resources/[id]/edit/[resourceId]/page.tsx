@@ -14,7 +14,7 @@ interface Resource {
   url?: string
   content?: string
   tags: string[]
-  category: string
+  categories: string[]
   videoMetadata?: {
     id: string
     title: string
