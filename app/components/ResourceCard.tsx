@@ -29,32 +29,43 @@ interface UrlMetadata {
   publishedAt?: string;
 }
 
-interface ResourceCardProps {
-  resource: {
-    _id: string
+interface Resource {
+  _id: string
+  title: string
+  description: string
+  type: 'note' | 'link' | 'video' | 'document' | 'command'
+  url?: string
+  content?: string
+  tags: string[]
+  categories: string[]
+  createdAt?: string
+  lockerId?: string
+  videoMetadata?: {
+    id: string
     title: string
     description: string
-    type: ResourceType
-    url?: string
-    content?: string
-    tags: string[]
-    category: string
-    createdAt?: string
-    videoMetadata?: {
-      id: string
-      title: string
-      description: string
-      thumbnail: string
-      channelTitle: string
-      publishedAt: string
-    }
-    urlMetadata?: UrlMetadata
+    thumbnail: string
+    channelTitle: string
+    publishedAt: string
   }
-  isAdmin: boolean
-  onDelete?: (id: string) => void
+  urlMetadata?: {
+    type: string
+    title?: string
+    description?: string
+    thumbnail?: string
+    author?: string
+    publishedAt?: string
+  }
 }
 
-export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCardProps) {
+interface ResourceCardProps {
+  resource: Resource
+  isAdmin: boolean
+  onDelete: (id: string) => void
+  className?: string
+}
+
+export default function ResourceCard({ resource, isAdmin, onDelete, className = '' }: ResourceCardProps) {
   const [showModal, setShowModal] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
@@ -63,15 +74,11 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false)
       }
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setShowModal(false)
-      }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
@@ -201,105 +208,148 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
   }
 
   return (
-    <>
-      <div className="overflow-hidden rounded-xl bg-white shadow-md transition-shadow hover:shadow-lg dark:bg-gray-800 dark:shadow-gray-900/30">
-        {/* Card Header */}
-        <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center justify-between">
-            {/* Resource Type Badge */}
-            <div className="flex items-center space-x-2">
-              <span className="flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+    <div className="group relative">
+      <div 
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/90 to-white/40 dark:from-gray-800/90 dark:to-gray-900/40 p-6 shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:-rotate-1 cursor-pointer"
+        onClick={() => setShowModal(true)}
+      >
+        {/* Shimmer effect */}
+        <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:translate-x-full transition-transform duration-1000" />
+        
+        {/* Gradient border effect */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        
+        {/* Content container */}
+        <div className="relative z-10">
+          {/* Header section */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              {/* Type icon with enhanced styling */}
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100/80 to-blue-50/50 dark:from-blue-900/30 dark:to-blue-800/20 p-2 shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                 {getTypeIcon()}
-                <span className="ml-1.5">{getResourceTypeLabel()}</span>
-              </span>
-              <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                {resource.category}
-              </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setShowModal(true)}
-                className="rounded p-1 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
-                aria-label="View Details"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
+              </div>
               
-              {/* Admin Controls */}
-              {isAdmin && (
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="rounded p-1 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
-                    aria-label="Options"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                  
-                  {dropdownOpen && (
-                    <div className="absolute right-0 z-10 mt-1 w-40 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-700">
-                      <Link 
-                        href={`/resources/${resource._id}/edit`}
-                        className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
+              {/* Type and category labels */}
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-100/80 via-blue-50/50 to-blue-100/80 dark:from-blue-900/30 dark:via-blue-800/20 dark:to-blue-900/30 px-3 py-0.5 text-sm font-medium text-blue-800 dark:text-blue-300 shadow-sm transition-all duration-300 hover:shadow-md">
+                  {getResourceTypeLabel()}
+                </span>
+                {resource.categories && resource.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {resource.categories.map(category => (
+                      <span
+                        key={category}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100/80 via-purple-50/50 to-purple-100/80 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-purple-900/30 text-purple-800 dark:text-purple-300"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => setShowConfirmDelete(true)}
-                        className="flex w-full items-center px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-600"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Card Preview Content */}
-        <div className="px-4 py-3">
-          <h3 className="text-lg font-semibold gradient-text-accent">
-            {resource.title}
-          </h3>
-          
-          {/* Description (always truncated in card) */}
-          {resource.description && (
-            <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
+            {/* Admin actions with improved styling */}
+            {isAdmin && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDropdownOpen(!dropdownOpen);
+                  }}
+                  className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors duration-200"
+                >
+                  <svg className="h-5 w-5 transform transition-transform duration-200 hover:rotate-90" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  </svg>
+                </button>
+                
+                {/* Dropdown menu with enhanced styling */}
+                {dropdownOpen && (
+                  <div 
+                    className="absolute right-0 mt-2 w-48 rounded-xl bg-white/90 dark:bg-gray-800/90 py-2 shadow-xl ring-1 ring-black/5 backdrop-blur-sm z-50 transform transition-all duration-200 scale-100 opacity-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link 
+                      href={resource.lockerId 
+                        ? `/private-resources/${resource.lockerId}/edit/${resource._id}`
+                        : `/resources/${resource._id}/edit`
+                      }
+                      className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                    >
+                      <PencilIcon className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:rotate-12" />
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowConfirmDelete(true)
+                        setDropdownOpen(false)
+                      }}
+                      className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                    >
+                      <TrashIcon className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:-translate-y-1" />
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Title and description with improved typography */}
+          <div className="mt-4 space-y-2">
+            <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white transition-colors duration-300">
+              {resource.title}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
               {resource.description}
             </p>
+          </div>
+
+          {/* Resource preview indicator with enhanced styling */}
+          {(resource.type === 'video' || resource.type === 'link') && resource.url && (
+            <div className="mt-4 flex items-center text-sm">
+              {resource.type === 'video' ? (
+                <div className="flex items-center text-blue-600 dark:text-blue-400 transition-all duration-300 hover:text-blue-700 dark:hover:text-blue-300">
+                  <div className="relative mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute -inset-1 animate-ping rounded-full bg-blue-400/20 duration-1000"></div>
+                  </div>
+                  <span className="font-medium">Click to watch video</span>
+                </div>
+              ) : (
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg className="mr-2 h-4 w-4 transform transition-transform duration-300 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span className="font-medium">{getUrlDisplayText()}</span>
+                </a>
+              )}
+            </div>
           )}
 
-          {/* Tags Preview (limited to 3) */}
+          {/* Tags section with enhanced styling */}
           {resource.tags && resource.tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {resource.tags.slice(0, 3).map((tag) => (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {resource.tags.slice(0, 3).map((tag, index) => (
                 <span
-                  key={tag}
-                  className={`flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getTagColor(tag)}`}
+                  key={index}
+                  className="inline-flex items-center rounded-full bg-gradient-to-r from-gray-100/90 via-gray-50/80 to-gray-100/90 dark:from-gray-700/90 dark:via-gray-800/80 dark:to-gray-700/90 px-3 py-1 text-xs font-medium text-gray-800 dark:text-gray-200 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
                   {tag}
                 </span>
               ))}
               {resource.tags.length > 3 && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-gray-500 dark:text-gray-400 transition-opacity duration-200 hover:opacity-75">
                   +{resource.tags.length - 3} more
                 </span>
               )}
@@ -308,96 +358,109 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
         </div>
       </div>
 
-      {/* Full Content Modal */}
+      {/* Full Content Modal with enhanced styling */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div 
             ref={modalRef}
-            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800"
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white/95 dark:bg-gray-800/95 p-6 shadow-2xl ring-1 ring-black/5 backdrop-blur-sm transform transition-all duration-300 scale-100 opacity-100"
           >
-            {/* Close Button */}
+            {/* Close Button with improved interaction */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+              className="absolute right-4 top-4 rounded-full p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors duration-200 hover:rotate-90 transform"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
 
-            {/* Modal Content */}
-            <div className="mb-6 space-y-4">
-              {/* Title and Type */}
+            {/* Modal Content with improved spacing and animations */}
+            <div className="mb-6 space-y-6">
+              {/* Title and Type with gradient effects */}
               <div className="flex items-center space-x-3">
-                <span className="flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                <span className="flex items-center rounded-full bg-gradient-to-r from-blue-100/80 via-blue-50/50 to-blue-100/80 dark:from-blue-900/30 dark:via-blue-800/20 dark:to-blue-900/30 px-3 py-1 text-sm font-medium text-blue-800 dark:text-blue-300 shadow-sm">
                   {getTypeIcon()}
                   <span className="ml-1.5">{getResourceTypeLabel()}</span>
                 </span>
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                  {resource.category}
-                </span>
               </div>
               
-              <h2 className="text-2xl font-bold gradient-text-primary">
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white">
                 {resource.title}
               </h2>
 
-              {/* Full Description */}
+              {/* Full Description with improved readability */}
               {resource.description && (
-                <p className="text-gray-600 dark:text-gray-300">{resource.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  {resource.description}
+                </p>
               )}
 
-              {/* Content Based on Type */}
+              {/* Video Content with enhanced player */}
               {resource.type === 'video' && resource.url && (
-                <div className="mt-4">
-                  <YoutubePreview url={resource.url} className="w-full rounded-lg" />
-                  {/* Video Metadata */}
+                <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-black/5 shadow-lg">
+                  <YoutubePreview url={resource.url} />
+                  {/* Video Metadata with improved layout */}
                   {(resource.urlMetadata || resource.videoMetadata) && (
-                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl text-sm text-gray-500 dark:text-gray-400">
                       {resource.urlMetadata?.author && (
-                        <p>Channel: {resource.urlMetadata.author}</p>
+                        <p className="flex items-center">
+                          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Channel: {resource.urlMetadata.author}
+                        </p>
                       )}
                       {resource.videoMetadata?.channelTitle && !resource.urlMetadata?.author && (
-                        <p>Channel: {resource.videoMetadata.channelTitle}</p>
+                        <p className="flex items-center">
+                          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Channel: {resource.videoMetadata.channelTitle}
+                        </p>
                       )}
                       {resource.urlMetadata?.publishedAt && (
-                        <p>Published: {formatDate(resource.urlMetadata.publishedAt)}</p>
+                        <p className="flex items-center mt-1">
+                          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Published: {formatDate(resource.urlMetadata.publishedAt)}
+                        </p>
                       )}
                       {resource.videoMetadata?.publishedAt && !resource.urlMetadata?.publishedAt && (
-                        <p>Published: {formatDate(resource.videoMetadata.publishedAt)}</p>
+                        <p className="flex items-center mt-1">
+                          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Published: {formatDate(resource.videoMetadata.publishedAt)}
+                        </p>
                       )}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Link Content */}
-              {(resource.type === 'link' || resource.type === 'document') && resource.url && (
+              {/* Link Content with improved interaction */}
+              {resource.type === 'link' && resource.url && (
                 <div className="mt-4">
                   <a
                     href={resource.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-blue-600 hover:underline dark:text-blue-400"
+                    className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 group"
                   >
-                    {getUrlDisplayText()}
-                    <svg
-                      className="ml-1 h-4 w-4"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
-                      <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                    <svg className="mr-2 h-5 w-5 transform transition-transform duration-300 group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
+                    <span className="font-medium">{getUrlDisplayText()}</span>
                   </a>
                 </div>
               )}
 
-              {/* Note Content */}
+              {/* Note Content with improved formatting */}
               {resource.type === 'note' && resource.content && (
-                <div className="mt-4 rounded-lg bg-gray-50 p-4 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                <div className="mt-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-800/30 p-4 text-gray-800 dark:text-gray-200 shadow-inner">
                   {resource.content.split('\n').map((paragraph, index) => (
                     paragraph.trim() ? (
-                      <p key={index} className="mb-3 last:mb-0">
+                      <p key={index} className="mb-3 last:mb-0 leading-relaxed">
                         {paragraph}
                       </p>
                     ) : <br key={index} />
@@ -405,21 +468,29 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
                 </div>
               )}
 
-              {/* Command Content */}
+              {/* Command Content with improved terminal look */}
               {resource.type === 'command' && resource.content && (
                 <div className="mt-4">
-                  <div className="rounded-lg bg-gray-900 text-white">
-                    <div className="p-4">
+                  <div className="rounded-xl bg-gray-900 text-white overflow-hidden shadow-lg">
+                    <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
+                      <div className="flex space-x-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
+                      <span className="text-xs text-gray-400">Terminal</span>
+                    </div>
+                    <div className="p-4 font-mono">
                       {resource.content.split('\n').map((line, index) => (
                         line.trim() && (
                           <div key={index} className="group relative mb-2 flex items-start">
                             <span className="mr-2 select-none font-mono text-green-500">$</span>
-                            <pre className="flex-1 overflow-x-auto whitespace-pre font-mono text-gray-300">{line}</pre>
+                            <pre className="flex-1 overflow-x-auto whitespace-pre text-gray-300">{line}</pre>
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(line.trim());
                               }}
-                              className="absolute right-2 hidden rounded bg-gray-700 p-1 text-gray-300 opacity-0 transition-opacity hover:bg-gray-600 group-hover:block group-hover:opacity-100"
+                              className="absolute right-2 hidden rounded bg-gray-700 p-1.5 text-gray-300 opacity-0 transition-all duration-200 hover:bg-gray-600 group-hover:block group-hover:opacity-100"
                               title="Copy command"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -431,36 +502,44 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
                       ))}
                     </div>
                   </div>
-                  {/* Command Tips */}
-                  <div className="mt-2 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/30">
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      Tip: Hover over a command to reveal the copy button. Click the copy button to copy the command to your clipboard.
-                    </p>
-                  </div>
                 </div>
               )}
 
-              {/* All Tags */}
+              {/* All Tags with improved visual hierarchy */}
               {resource.tags && resource.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {resource.tags.map((tag) => (
                     <span
                       key={tag}
-                      className={`flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getTagColor(tag)}`}
+                      className="inline-flex items-center rounded-full bg-gradient-to-r from-gray-100/90 via-gray-50/80 to-gray-100/90 dark:from-gray-700/90 dark:via-gray-800/80 dark:to-gray-700/90 px-3 py-1 text-xs font-medium text-gray-800 dark:text-gray-200 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
                       {tag}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Date Added */}
+              {/* Date Added with icon */}
               {resource.createdAt && (
-                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   Added: {formatDate(resource.createdAt)}
+                </div>
+              )}
+
+              {/* Categories in modal */}
+              {resource.categories && resource.categories.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {resource.categories.map(category => (
+                    <span
+                      key={category}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100/80 via-purple-50/50 to-purple-100/80 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-purple-900/30 text-purple-800 dark:text-purple-300"
+                    >
+                      {category}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
@@ -468,31 +547,39 @@ export default function ResourceCard({ resource, isAdmin, onDelete }: ResourceCa
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showConfirmDelete && isAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Confirm Deletion</h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+      {/* Delete confirmation modal with improved styling */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white/95 dark:bg-gray-800/95 p-6 shadow-2xl ring-1 ring-black/5">
+            <div className="flex items-center space-x-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Confirm Delete
+              </h3>
+            </div>
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
               Are you sure you want to delete this resource? This action cannot be undone.
             </p>
-            <div className="mt-4 flex justify-end space-x-3">
+            <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmDelete(false)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="rounded-lg bg-gray-100 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors duration-200 flex items-center"
               >
+                <TrashIcon className="mr-2 h-4 w-4" />
                 Delete
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 } 

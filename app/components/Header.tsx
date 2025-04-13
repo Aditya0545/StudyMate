@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Logo from './Logo'
 import CreatorModal from './CreatorModal'
 import ThemeSelect from './ThemeSelect'
-import { Bars3Icon, XMarkIcon, HomeIcon, BookOpenIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, HomeIcon, BookOpenIcon, LockClosedIcon, UserIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 
 export default function Header() {
+  const pathname = usePathname();
   const [isCreatorModalOpen, setIsCreatorModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -109,12 +111,14 @@ export default function Header() {
                 >
                   MY Assets
                 </Link>
-                <button
-                  onClick={() => setIsCreatorModalOpen(true)}
-                  className="nav-link relative inline-block"
-                >
-                  Creator's Corner
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCreatorModalOpen(true)}
+                    className="nav-link relative inline-block"
+                  >
+                    Creator&apos;s Corner
+                  </button>
+                </div>
               </nav>
             </div>
             
@@ -202,13 +206,13 @@ export default function Header() {
 
                 <button
                   onClick={() => {
-                    setIsMobileMenuOpen(false);
                     setIsCreatorModalOpen(true);
+                    setIsMobileMenuOpen(false);
                   }}
                   className="flex items-center space-x-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                 >
                   <UserIcon className="h-5 w-5" />
-                  <span>Creator's Corner</span>
+                  <span>Creator&apos;s Corner</span>
                 </button>
               </nav>
             </div>

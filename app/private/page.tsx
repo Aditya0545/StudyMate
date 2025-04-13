@@ -1,70 +1,29 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { PlusIcon, FolderIcon, DocumentTextIcon, VideoCameraIcon, LinkIcon, TagIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
 import ResourceCard from '@/app/components/ResourceCard'
+import { CATEGORIES } from '@/constants'
+import { ArrowLeftOnRectangleIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { Resource } from '@/types'
+import { useRouter } from 'next/navigation'
 
-type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
-
-// Remove or comment out the predefined CATEGORIES
-// const CATEGORIES = [ ... ] as const;
-
-interface Resource {
-  _id: string
-  title: string
-  description: string
-  type: ResourceType
-  url?: string
-  content?: string
-  tags: string[]
-  categories: string[]
-  createdAt?: string
-  videoMetadata?: {
-    id: string
-    title: string
-    description: string
-    thumbnail: string
-    channelTitle: string
-    publishedAt: string
-  }
-  urlMetadata?: {
-    type: string
-    title?: string
-    description?: string
-    thumbnail?: string
-    author?: string
-    publishedAt?: string
-  }
-}
-
-export default function ResourcesPage() {
-  const router = useRouter()
+export default function PrivateResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  
-  // Filters
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedType, setSelectedType] = useState<string>('')
   const [selectedTag, setSelectedTag] = useState<string>('')
-  
-  // Get all unique tags from resources and sort them
+  const router = useRouter()
+
+  // Get all unique tags from resources
   const tags = useMemo(() => {
     const allTags = resources.flatMap(r => r.tags).filter(Boolean)
     return Array.from(new Set(allTags)).sort((a, b) => a.localeCompare(b))
   }, [resources])
 
-  // Reset selected tag if it no longer exists in the resources
-  useEffect(() => {
-    if (selectedTag && !tags.includes(selectedTag)) {
-      setSelectedTag('')
-    }
-  }, [tags, selectedTag])
-  
   // Get all unique categories from resources and sort them
   const categories = useMemo(() => {
     const allCategories = resources.flatMap(r => r.categories || []).filter(Boolean)
@@ -77,15 +36,15 @@ export default function ResourcesPage() {
       setSelectedCategories([])
     }
   }, [categories, selectedCategories])
-  
+
   // Fetch resources
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const response = await fetch('/api/resources', {
+        const response = await fetch('/api/private-resources', {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache, no-store' }
-        });
+        })
         
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`)
@@ -103,73 +62,7 @@ export default function ResourcesPage() {
     
     fetchResources()
   }, [])
-  
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        // Get admin password from localStorage
-        const adminPassword = localStorage.getItem('admin-password');
-        if (!adminPassword) {
-          setIsAdmin(false);
-          return;
-        }
 
-        const response = await fetch('/api/auth/check-admin', {
-          method: 'POST',
-          headers: {
-            'X-Admin-Password': adminPassword
-          }
-        });
-        
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-        
-        if (!data.isAdmin) {
-          localStorage.removeItem('admin-password');
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-        localStorage.removeItem('admin-password');
-      }
-    };
-    
-    checkAdminStatus();
-  }, []);
-
-  // Handle resource deletion
-  const handleDeleteResource = async (resourceId: string) => {
-    try {
-      const adminPassword = localStorage.getItem('admin-password');
-      if (!adminPassword) {
-        router.push('/login');
-        return;
-      }
-
-      const response = await fetch(`/api/resources?id=${resourceId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Password': adminPassword
-        }
-      });
-      
-      if (response.ok) {
-        setResources(prevResources => 
-          prevResources.filter(resource => resource._id !== resourceId)
-        );
-      } else if (response.status === 401) {
-        localStorage.removeItem('admin-password');
-        router.push('/login');
-      } else {
-        console.error('Failed to delete resource');
-      }
-    } catch (error) {
-      console.error('Error deleting resource:', error);
-    }
-  };
-  
   // Reset filters
   const handleResetFilters = () => {
     setSearchTerm('')
@@ -177,12 +70,6 @@ export default function ResourcesPage() {
     setSelectedType('')
     setSelectedTag('')
   }
-
-  const handleLogout = () => {
-    localStorage.removeItem('admin-password');
-    setIsAdmin(false);
-    router.refresh();
-  };
 
   // Filter resources
   const filteredResources = useMemo(() => {
@@ -201,41 +88,43 @@ export default function ResourcesPage() {
     })
   }, [resources, searchTerm, selectedCategories, selectedType, selectedTag])
 
+  const handleDelete = async (resourceId: string) => {
+    try {
+      const adminPassword = localStorage.getItem('admin-password')
+      if (!adminPassword) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch(`/api/resources?id=${resourceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Password': adminPassword
+        }
+      })
+
+      if (response.ok) {
+        // Remove the deleted resource from the state
+        setResources(prevResources => 
+          prevResources.filter(resource => resource._id !== resourceId)
+        )
+      } else if (response.status === 401) {
+        localStorage.removeItem('admin-password')
+        router.push('/login')
+      } else {
+        console.error('Failed to delete resource')
+      }
+    } catch (error) {
+      console.error('Error deleting resource:', error)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header Section */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl sm:text-4xl font-bold animated-heading-main">Resources</h1>
-        <div className="flex items-center space-x-4">
-          {!isAdmin ? (
-            <Link
-              href="/login"
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-              Admin Login
-            </Link>
-          ) : (
-            <>
-              <Link
-                href="/resources/new"
-                className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >
-                <PlusIcon className="mr-2 h-5 w-5" />
-                Add New
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                Logout
-              </button>
-            </>
-          )}
-        </div>
+        <h1 className="text-3xl sm:text-4xl font-bold animated-heading-main">Private Resources</h1>
       </div>
       
       {/* Filters Section */}
@@ -358,7 +247,7 @@ export default function ResourcesPage() {
               {searchTerm || selectedCategories.length > 0 || selectedType || selectedTag ? (
                 <>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    No resources found for your filters
+                    No private resources found for your filters
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-2">
                     {searchTerm && `No matches for "${searchTerm}"`}
@@ -376,23 +265,21 @@ export default function ResourcesPage() {
               ) : (
                 <>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    No resources added yet
+                    No private resources added yet
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-2">
-                    Get started by adding your first resource
+                    Add your first private resource to get started
                   </p>
                 </>
               )}
             </div>
-            {isAdmin && (
-              <Link
-                href="/resources/new"
-                className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Add New Resource
-              </Link>
-            )}
+            <Link
+              href="/private/new"
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add New Private Resource
+            </Link>
           </div>
         ) : (
           <div className="col-span-full">
@@ -404,8 +291,8 @@ export default function ResourcesPage() {
                   <ResourceCard
                     key={resource._id}
                     resource={resource}
-                    isAdmin={isAdmin}
-                    onDelete={() => handleDeleteResource(resource._id)}
+                    isAdmin={true}
+                    onDelete={handleDelete}
                     className="h-full"
                   />
                 ))}
@@ -419,8 +306,8 @@ export default function ResourcesPage() {
                   <ResourceCard
                     key={resource._id}
                     resource={resource}
-                    isAdmin={isAdmin}
-                    onDelete={() => handleDeleteResource(resource._id)}
+                    isAdmin={true}
+                    onDelete={handleDelete}
                     className="h-full"
                   />
                 ))}
