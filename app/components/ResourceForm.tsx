@@ -245,7 +245,7 @@ export default function ResourceForm({
       
       const formattedText = formatUrlsInContent(pastedText)
       
-      const currentContent = formData.content
+      const currentContent = formData.content || ''
       const newContent = 
         currentContent.substring(0, start) +
         formattedText +
