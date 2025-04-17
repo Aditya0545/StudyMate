@@ -289,11 +289,11 @@ export default function PrivateResourcesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
         {filteredLockers.map((locker, index) => (
           <div
             key={locker._id}
-            className="locker-card fade-in cursor-pointer"
+            className="locker-card fade-in cursor-pointer h-full"
             style={{ animationDelay: `${index * 0.2}s` }}
             onClick={(e) => {
               if (showPasswordModal) return;
