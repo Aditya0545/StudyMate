@@ -259,16 +259,16 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
                       e.stopPropagation();
                       setDropdownOpen(!dropdownOpen);
                     }}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors duration-200"
+                    className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100/50 dark:text-gray-400 dark:hover:bg-gray-700/50 transition-colors duration-200"
                   >
-                    <svg className="h-5 w-5 transform transition-transform duration-200 hover:rotate-90" viewBox="0 0 20 20" fill="currentColor">
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                     </svg>
                   </button>
                   
                   {dropdownOpen && (
                     <div 
-                      className="absolute right-0 mt-2 w-48 rounded-xl bg-white/90 dark:bg-gray-800/90 py-2 shadow-xl ring-1 ring-black/5 backdrop-blur-sm z-50 transform transition-all duration-200 scale-100 opacity-100"
+                      className="absolute right-0 mt-1 w-36 rounded-xl bg-white py-2 shadow-lg ring-1 ring-black/5 dark:bg-gray-800 z-50"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Link 
@@ -276,9 +276,11 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
                           ? `/private-resources/${resource.lockerId}/edit/${resource._id}`
                           : `/resources/${resource._id}/edit`
                         }
-                        className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                        className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700/50"
                       >
-                        <PencilIcon className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:rotate-12" />
+                        <svg className="mr-3 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                         Edit
                       </Link>
                       <button
@@ -286,9 +288,11 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
                           setShowConfirmDelete(true)
                           setDropdownOpen(false)
                         }}
-                        className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                        className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
-                        <TrashIcon className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:-translate-y-1" />
+                        <svg className="mr-3 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                         Delete
                       </button>
                     </div>
@@ -453,12 +457,9 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
               {resource.type === 'note' && resource.content && (
                 <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-700/50">
                   <div 
-                    className="prose prose-sm max-w-none dark:prose-invert markdown-content [&_a]:text-blue-600 [&_a]:underline hover:[&_a]:text-blue-800 dark:[&_a]:text-blue-400 hover:dark:[&_a]:text-blue-300 whitespace-pre-wrap"
+                    className="prose prose-sm max-w-none dark:prose-invert [&_p]:mb-3 last:[&_p]:mb-0 prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 dark:prose-a:text-blue-400 hover:dark:prose-a:text-blue-300 prose-ul:my-2 prose-li:my-0 prose-ol:my-2"
                     dangerouslySetInnerHTML={{ 
-                      __html: marked(resource.content || '', {
-                        breaks: true,
-                        gfm: true
-                      }) 
+                      __html: resource.content
                     }}
                   />
                 </div>
