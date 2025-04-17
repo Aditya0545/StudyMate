@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import YoutubePreview from './YoutubePreview'
 import { getVideoMetadata } from '@/app/lib/youtube'
 import { CATEGORIES, CategoryType, TAG_COLORS } from '@/constants'
+import RichTextEditor from './RichTextEditor'
 
 type ResourceType = 'note' | 'link' | 'video' | 'document' | 'command'
 
@@ -187,13 +188,26 @@ export default function ResourceForm({
 
   // Function to detect and format URLs in content
   const formatUrlsInContent = (content: string): string => {
-    // First, preserve any existing markdown links
+    // First, check if the URL is already in markdown format
     const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-    let formattedContent = content.replace(markdownLinkRegex, (match) => match)
-
-    // Handle bit.ly and other URLs
     const urlRegex = /(https?:\/\/[^\s]+|bit\.ly\/[^\s]+)/gi
+    
+    let formattedContent = content
+    let matches = new Set()
+    
+    // Find all markdown links first and add them to matches
+    let markdownMatch
+    while ((markdownMatch = markdownLinkRegex.exec(content)) !== null) {
+      matches.add(markdownMatch[2]) // Add the URL part to matches
+    }
+
+    // Replace plain URLs that aren't already in markdown format
     formattedContent = formattedContent.replace(urlRegex, (url) => {
+      // If this URL is already part of a markdown link, return it unchanged
+      if (matches.has(url)) {
+        return url
+      }
+
       try {
         // Clean up the URL
         const cleanUrl = url.trim()
@@ -212,8 +226,8 @@ export default function ResourceForm({
         // Format as markdown link
         return `[${displayText}](${fullUrl})`
       } catch {
-        // If URL parsing fails, still make it clickable
-        return `[${url}](${url})`
+        // If URL parsing fails, return unchanged
+        return url
       }
     })
 
@@ -564,23 +578,23 @@ export default function ResourceForm({
               </div>
             ) : (
               <div className="space-y-2">
-                <textarea
-                  id="content"
-                  name="content"
-                  value={formData.content}
-                  onChange={handleContentChange}
-                  onPaste={handlePaste}
-                  rows={10}
-                  className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 font-mono"
-                  placeholder="Write your notes here (all links will be clickable)"
+                <RichTextEditor
+                  content={formData.content || ''}
+                  onChange={(newContent) => {
+                    setFormData({
+                      ...formData,
+                      content: newContent
+                    })
+                  }}
+                  placeholder="Write your notes here..."
                 />
                 <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
                   <h4 className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-200">Tips:</h4>
                   <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                    <li>All links will be automatically made clickable</li>
-                    <li>Links will be underlined and easy to identify</li>
-                    <li>Works with both regular URLs and short links (bit.ly)</li>
-                    <li>Just paste or type your links normally</li>
+                    <li>Use the toolbar to format your text (bold, italic, lists, etc.)</li>
+                    <li>Click the link button to add clickable links</li>
+                    <li>Use bullet points and numbered lists to organize information</li>
+                    <li>Highlight text and use the code format for technical content</li>
                   </ul>
                 </div>
               </div>
