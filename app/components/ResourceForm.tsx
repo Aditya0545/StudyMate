@@ -125,6 +125,13 @@ export default function ResourceForm({
       }
       
       setFormData(resetData)
+    } else if (name === 'content' && formData.type === 'note') {
+      // For notes, detect and format URLs in content
+      const formattedContent = formatUrlsInContent(value)
+      setFormData({
+        ...formData,
+        [name]: formattedContent
+      })
     } else {
       const newFormData = {
         ...formData,
@@ -175,6 +182,97 @@ export default function ResourceForm({
       setError('Failed to fetch video details. Please try again.')
     } finally {
       setIsLoadingVideoData(false)
+    }
+  }
+
+  // Function to detect and format URLs in content
+  const formatUrlsInContent = (content: string): string => {
+    // First, preserve any existing markdown links
+    const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+    let formattedContent = content.replace(markdownLinkRegex, (match) => match)
+
+    // Handle bit.ly and other URLs
+    const urlRegex = /(https?:\/\/[^\s]+|bit\.ly\/[^\s]+)/gi
+    formattedContent = formattedContent.replace(urlRegex, (url) => {
+      try {
+        // Clean up the URL
+        const cleanUrl = url.trim()
+        let fullUrl = cleanUrl
+        
+        // Add protocol to bit.ly links if missing
+        if (cleanUrl.startsWith('bit.ly/')) {
+          fullUrl = `https://${cleanUrl}`
+        }
+        
+        // Create display text
+        const displayText = cleanUrl
+          .replace(/^https?:\/\//, '') // Remove protocol
+          .replace(/\/$/, '')          // Remove trailing slash
+
+        // Format as markdown link
+        return `[${displayText}](${fullUrl})`
+      } catch {
+        // If URL parsing fails, still make it clickable
+        return `[${url}](${url})`
+      }
+    })
+
+    return formattedContent
+  }
+
+  // Function to validate URLs
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string)
+      return true
+    } catch (_) {
+      return false
+    }
+  }
+
+  // Handle pasting URLs
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (formData.type !== 'note') return
+    
+    const pastedText = e.clipboardData.getData('text')
+    const urlRegex = /(https?:\/\/[^\s]+|bit\.ly\/[^\s]+)/gi
+    
+    if (urlRegex.test(pastedText)) {
+      e.preventDefault()
+      const textarea = e.currentTarget
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      
+      const formattedText = formatUrlsInContent(pastedText)
+      
+      const currentContent = formData.content
+      const newContent = 
+        currentContent.substring(0, start) +
+        formattedText +
+        currentContent.substring(end)
+      
+      setFormData({
+        ...formData,
+        content: newContent
+      })
+    }
+  }
+
+  // Handle content change
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    
+    if (formData.type === 'note') {
+      const formattedContent = formatUrlsInContent(value)
+      setFormData({
+        ...formData,
+        content: formattedContent
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      })
     }
   }
 
@@ -229,15 +327,6 @@ export default function ResourceForm({
     }
     
     return newErrors
-  }
-
-  const isValidUrl = (string: string) => {
-    try {
-      new URL(string)
-      return true
-    } catch (_) {
-      return false
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -474,15 +563,27 @@ export default function ResourceForm({
                 </div>
               </div>
             ) : (
-              <textarea
-                id="content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                rows={10}
-                className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                placeholder="Write your notes here (Markdown supported)"
-              />
+              <div className="space-y-2">
+                <textarea
+                  id="content"
+                  name="content"
+                  value={formData.content}
+                  onChange={handleContentChange}
+                  onPaste={handlePaste}
+                  rows={10}
+                  className="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 font-mono"
+                  placeholder="Write your notes here (all links will be clickable)"
+                />
+                <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                  <h4 className="mb-2 text-sm font-medium text-gray-900 dark:text-gray-200">Tips:</h4>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                    <li>All links will be automatically made clickable</li>
+                    <li>Links will be underlined and easy to identify</li>
+                    <li>Works with both regular URLs and short links (bit.ly)</li>
+                    <li>Just paste or type your links normally</li>
+                  </ul>
+                </div>
+              </div>
             )}
             {errors.content && <p className="mt-1 text-sm text-red-500">{errors.content}</p>}
           </div>
