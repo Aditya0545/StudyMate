@@ -209,10 +209,10 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
   }
 
   return (
-    <div className={`group relative overflow-hidden rounded-lg bg-white shadow transition-all hover:shadow-lg dark:bg-gray-800 ${className}`}>
-      <div className="p-6">
+    <div className={`group relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md dark:bg-gray-800 h-full flex flex-col ${className}`}>
+      <div className="p-4">
         <div 
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/90 to-white/40 dark:from-gray-800/90 dark:to-gray-900/40 p-6 shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:-rotate-1 cursor-pointer"
+          className="relative overflow-hidden rounded-xl bg-gradient-to-br from-white/90 to-white/40 dark:from-gray-800/90 dark:to-gray-900/40 p-4 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer h-full flex flex-col"
           onClick={() => setShowModal(true)}
         >
           {/* Shimmer effect */}
@@ -222,9 +222,9 @@ export default function ResourceCard({ resource, isAdmin, onDelete, className = 
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           
           {/* Content container */}
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col h-full">
             {/* Header section */}
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-3">
                 {/* Type icon with enhanced styling */}
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100/80 to-blue-50/50 dark:from-blue-900/30 dark:to-blue-800/20 p-2 shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">

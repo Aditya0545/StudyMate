@@ -332,7 +332,7 @@ export default function ResourcesPage() {
       </div>
 
       {/* Resources Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5 auto-rows-fr">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {loading ? (
           <div className="col-span-full flex items-center justify-center py-6">
             <div className="animate-pulse flex space-x-3">
@@ -396,34 +396,17 @@ export default function ResourcesPage() {
           </div>
         ) : (
           <div className="col-span-full">
-            {/* Large Cards (Video and Link types) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 mb-3">
-              {filteredResources
-                .filter(resource => ['video', 'link'].includes(resource.type))
-                .map((resource) => (
-                  <ResourceCard
-                    key={resource._id}
-                    resource={resource}
-                    isAdmin={isAdmin}
-                    onDelete={() => handleDeleteResource(resource._id)}
-                    className="h-full"
-                  />
-                ))}
-            </div>
-            
-            {/* Small Cards (Note, Command, and Document types) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2">
-              {filteredResources
-                .filter(resource => ['note', 'command', 'document'].includes(resource.type))
-                .map((resource) => (
-                  <ResourceCard
-                    key={resource._id}
-                    resource={resource}
-                    isAdmin={isAdmin}
-                    onDelete={() => handleDeleteResource(resource._id)}
-                    className="h-full"
-                  />
-                ))}
+            {/* All Cards in one grid */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+              {filteredResources.map((resource) => (
+                <ResourceCard
+                  key={resource._id}
+                  resource={resource}
+                  isAdmin={isAdmin}
+                  onDelete={() => handleDeleteResource(resource._id)}
+                  className="h-full"
+                />
+              ))}
             </div>
           </div>
         )}

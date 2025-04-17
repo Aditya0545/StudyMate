@@ -564,19 +564,16 @@
 
 /* Locker Card Styles */
 .locker-card {
-  @apply relative overflow-hidden rounded-2xl transition-transform duration-300;
+  @apply relative overflow-hidden rounded-2xl transition-transform duration-300 flex flex-col;
+  min-height: 180px;
 }
 
 .locker-content {
-  @apply relative p-6 bg-gradient-to-br from-blue-500 to-purple-600;
+  @apply relative p-6 bg-gradient-to-br from-blue-500 to-purple-600 flex-1 flex flex-col;
 }
 
 .locker-content > div:last-child {
-  @apply transition-all duration-300;
-}
-
-.locker-content > div:last-child:hover {
-  @apply opacity-80;
+  @apply transition-all duration-300 mt-auto;
 }
 
 .locker-number {
