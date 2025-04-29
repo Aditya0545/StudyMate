@@ -47,5 +47,5 @@ export default clientPromise;
 // Helper function to connect to database and return Db instance
 export async function connectToDatabase(): Promise<Db> {
   const client = await clientPromise;
-  return client.db('studymate');
+  return client.db('test');
 } 

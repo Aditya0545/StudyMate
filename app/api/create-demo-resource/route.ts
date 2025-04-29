@@ -22,10 +22,10 @@ export async function GET() {
     if (count === 0) {
       // Create a demo resource
       const demoResource = {
-        title: 'Welcome to StudyMate!',
-        description: 'This is a demo resource to help you get started with StudyMate.',
+        title: 'Welcome to test!',
+        description: 'This is a demo resource to help you get started with test.',
         type: 'note',
-        content: '# Welcome to StudyMate!\n\nThis is a demo resource created automatically. You can create more resources by clicking the "Add New" button in the resources page.\n\n## Features\n\n- Add different types of resources (notes, links, videos, documents)\n- Organize with tags and categories\n- Search and filter your resources\n- Light and dark mode support',
+        content: '# Welcome to test!\n\nThis is a demo resource created automatically. You can create more resources by clicking the "Add New" button in the resources page.\n\n## Features\n\n- Add different types of resources (notes, links, videos, documents)\n- Organize with tags and categories\n- Search and filter your resources\n- Light and dark mode support',
         tags: ['demo', 'getting-started'],
         category: 'General',
         createdAt: new Date()

@@ -8,7 +8,7 @@ export async function GET() {
     
     // Test connection
     const client = await clientPromise;
-    const db = client.db('studymate');
+    const db = client.db('test');
     
     // Check if we can connect and perform a simple operation
     const dbInfo = await db.command({ ping: 1 });
@@ -27,7 +27,7 @@ export async function GET() {
       status: 'success',
       connected: true,
       ping: dbInfo.ok === 1 ? 'success' : 'failed',
-      database: 'studymate',
+      database: 'test',
       collections: collectionNames,
       resourceCount,
       note: 'Connection to MongoDB successful!'

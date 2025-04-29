@@ -39,8 +39,8 @@ export async function GET() {
     // Now try database operations
     try {
       console.log('[DEBUG] Accessing database...');
-      const db = client.db('studymate');
-      debugInfo.database = 'studymate';
+      const db = client.db('test');
+      debugInfo.database = 'test';
       
       // Try a ping to verify connection
       try {

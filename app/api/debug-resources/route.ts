@@ -18,7 +18,7 @@ export async function GET() {
       
       // Step 2: Access database
       debugInfo.steps.push({ step: 2, name: 'Access database', status: 'attempting' });
-      const db = client.db('studymate');
+      const db = client.db('test');
       debugInfo.steps[1].status = 'success';
       
       // Step 3: Check if resources collection exists
